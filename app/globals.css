@@ -165,15 +165,3 @@ body {
   outline: none;
 }
 
-/* deck.gl overlay canvas must sit above hero vignettes (z-10) so project pins
-   never disappear behind the bottom gradient when the map is dragged.
-   Different deck.gl versions name the canvas/wrapper differently, so we cover
-   the common patterns AND fall back to "any non-first canvas inside the map". */
-.maplibregl-map #deckgl-overlay,
-.maplibregl-map canvas[id^="deckgl"],
-.maplibregl-map .deck-canvas,
-.maplibregl-map > canvas:not(.maplibregl-canvas),
-#deckgl-wrapper {
-  z-index: 15 !important;
-  pointer-events: auto;
-}

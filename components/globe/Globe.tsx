@@ -391,7 +391,7 @@ export function Globe() {
       />
       {/* Bottom vignette for hint legibility */}
       <div
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-64 bg-gradient-to-t from-black via-black/60 to-transparent z-10"
+        className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-black/90 via-black/40 to-transparent z-10"
         aria-hidden
       />
 
