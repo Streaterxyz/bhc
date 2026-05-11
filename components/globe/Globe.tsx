@@ -176,9 +176,11 @@ export function Globe() {
       console.error("[map error]", e?.error?.message || e);
     });
 
+    // Reveal the UI as soon as the style is parsed (sphere visible).
+    // The deck.gl overlay is attached separately, gated on full map.load.
     let readyFired = false;
-    const onReady = () => {
-      if (readyFired) return;
+    const tryReady = () => {
+      if (readyFired || !map.isStyleLoaded()) return;
       readyFired = true;
       setReady(true);
       try {
@@ -187,17 +189,10 @@ export function Globe() {
         console.warn("Monochrome overrides failed:", err);
       }
     };
+    map.on("styledata", tryReady);
+    map.on("idle", tryReady);
 
-    // Fire on whichever event arrives first. Some environments stall on 'load' so
-    // we also use 'idle' (no pending changes) and a safety timeout.
-    map.once("load", onReady);
-    map.once("idle", onReady);
-    const readyTimeout = setTimeout(onReady, 4000);
-
-    let bootstrapped = false;
     const bootstrap = () => {
-      if (bootstrapped) return;
-      bootstrapped = true;
 
       // Cinematic intro: from space → Sydney
       if (!prefersReducedMotion) {
@@ -238,13 +233,10 @@ export function Globe() {
       }
     };
 
+    // deck.gl overlay attaches only after full map.load — the transform is wired then.
     map.once("load", bootstrap);
-    // Also bootstrap once ready fires, in case 'load' is delayed.
-    map.once("idle", bootstrap);
-    setTimeout(bootstrap, 4500);
 
     return () => {
-      clearTimeout(readyTimeout);
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
       map.remove();
       mapRef.current = null;
