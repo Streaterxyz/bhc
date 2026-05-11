@@ -1,0 +1,166 @@
+@import "tailwindcss";
+
+/* ------------------------------------------------------------------
+   BHC Design Tokens
+   Brand: monochrome black/white/greyscale + selective gold accent
+   ------------------------------------------------------------------ */
+
+:root {
+  /* Surfaces */
+  --bg-base: #000000;
+  --bg-elevated: #0a0a0a;
+  --bg-subtle: #141414;
+  --bg-overlay: rgba(0, 0, 0, 0.72);
+
+  /* Borders */
+  --border-subtle: #1f1f1f;
+  --border-default: #2a2a2a;
+  --border-strong: #3a3a3a;
+
+  /* Foreground */
+  --fg-primary: #ffffff;
+  --fg-secondary: #cccccc;
+  --fg-tertiary: #999999;
+  --fg-muted: #666666;
+  --fg-faint: #3a3a3a;
+
+  /* Accent (gold) */
+  --accent: #f4c21c;
+  --accent-bright: #ffd445;
+  --accent-dim: #7a6010;
+  --accent-glow: rgba(244, 194, 28, 0.45);
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-micro: 200ms;
+  --dur-base: 400ms;
+  --dur-cinematic: 1200ms;
+}
+
+@theme inline {
+  --color-bg-base: var(--bg-base);
+  --color-bg-elevated: var(--bg-elevated);
+  --color-bg-subtle: var(--bg-subtle);
+
+  --color-border-subtle: var(--border-subtle);
+  --color-border-default: var(--border-default);
+  --color-border-strong: var(--border-strong);
+
+  --color-fg-primary: var(--fg-primary);
+  --color-fg-secondary: var(--fg-secondary);
+  --color-fg-tertiary: var(--fg-tertiary);
+  --color-fg-muted: var(--fg-muted);
+  --color-fg-faint: var(--fg-faint);
+
+  --color-accent: var(--accent);
+  --color-accent-bright: var(--accent-bright);
+  --color-accent-dim: var(--accent-dim);
+
+  --font-sans: var(--font-manrope), system-ui, -apple-system, sans-serif;
+}
+
+/* ------------------------------------------------------------------ */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  background: var(--bg-base);
+  color: var(--fg-primary);
+  font-family: var(--font-sans);
+  font-feature-settings: "ss01", "cv11";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: var(--accent);
+  color: #000;
+}
+
+/* Disable iOS tap highlight */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Hide focus rings for mouse users, show for keyboard */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ------------------------------------------------------------------
+   Typography utility classes used in editorial layouts
+   ------------------------------------------------------------------ */
+
+.display {
+  font-weight: 800;
+  font-size: clamp(3rem, 8vw, 6.5rem);
+  line-height: 0.95;
+  letter-spacing: -0.02em;
+}
+
+.headline {
+  font-weight: 800;
+  font-size: clamp(2.25rem, 4.5vw, 3.5rem);
+  line-height: 1.02;
+  letter-spacing: -0.015em;
+}
+
+.eyebrow {
+  font-weight: 600;
+  font-size: 0.75rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--fg-tertiary);
+}
+
+.body-lg {
+  font-size: 1.125rem;
+  line-height: 1.6;
+  color: var(--fg-secondary);
+}
+
+/* Vertical label per BHC brand book */
+.label-vertical {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+/* MapLibre overrides — keep map chrome out of the way */
+.maplibregl-ctrl-attrib,
+.maplibregl-ctrl-logo {
+  display: none !important;
+}
+
+.maplibregl-canvas:focus {
+  outline: none;
+}
