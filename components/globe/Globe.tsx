@@ -12,6 +12,28 @@ import { ProjectPanel } from "./ProjectPanel";
 // Sydney centre — used as the "settle" target after the cinematic intro
 const SYDNEY: LngLatLike = [151.21, -33.87];
 
+/**
+ * Camera padding for the "home" view. On desktop we push the focal point right
+ * so the pin cluster doesn't sit behind the hero copy on the left.
+ * `padding` works by shrinking the perceived viewport — left padding of N px
+ * tells MapLibre to centre the `center` coord in the area to the right of N,
+ * which visually shifts the map content to the right.
+ */
+function getHomePadding(width: number) {
+  if (width >= 1280) return { left: Math.round(width * 0.4), top: 0, right: 0, bottom: 0 };
+  if (width >= 1024) return { left: Math.round(width * 0.32), top: 0, right: 0, bottom: 0 };
+  return { left: 0, top: 0, right: 0, bottom: 0 };
+}
+
+/**
+ * Camera padding when a project is selected — the side panel takes the right
+ * 480px on desktop, so we push the focal point left to keep the pin visible.
+ */
+function getProjectPadding(width: number) {
+  if (width >= 1024) return { right: 500, left: 0, top: 0, bottom: 0 };
+  return { left: 0, top: 0, right: 0, bottom: 0 };
+}
+
 // Use OpenFreeMap's hosted dark style as a starting point.
 // We override the background and key paint colours via setPaintProperty after load
 // to bring it in line with the BHC monochrome palette.
@@ -139,6 +161,7 @@ export function Globe() {
       bearing: -15,
       duration: 1600,
       essential: true,
+      padding: getProjectPadding(window.innerWidth),
     });
   }, []);
 
@@ -151,6 +174,7 @@ export function Globe() {
       bearing: -12,
       duration: 1400,
       essential: true,
+      padding: getHomePadding(window.innerWidth),
     });
   }, []);
 
@@ -208,9 +232,13 @@ export function Globe() {
     map.on("idle", tryReady);
 
     const bootstrap = () => {
+      const homePadding = getHomePadding(window.innerWidth);
 
-      // Cinematic intro: from space → Sydney
-      if (!prefersReducedMotion) {
+      if (prefersReducedMotion) {
+        // No animation — just set the padded view immediately.
+        map.setPadding(homePadding);
+      } else {
+        // Cinematic intro: from space → Sydney, padded right of hero copy.
         setTimeout(() => {
           map.flyTo({
             center: SYDNEY,
@@ -220,6 +248,7 @@ export function Globe() {
             duration: 3200,
             curve: 1.4,
             essential: true,
+            padding: homePadding,
           });
         }, 600);
       }
