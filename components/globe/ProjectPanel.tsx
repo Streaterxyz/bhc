@@ -25,13 +25,13 @@ export function ProjectPanel({ project, onClose }: Props) {
           animate={{ x: 0, opacity: 1 }}
           exit={{ x: "100%", opacity: 0 }}
           transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-          className="absolute top-0 right-0 bottom-0 z-30 w-full sm:w-[440px] lg:w-[480px] bg-[color:var(--bg-elevated)]/95 backdrop-blur-xl border-l border-[color:var(--border-subtle)] overflow-y-auto"
+          className="fixed top-0 right-0 bottom-0 z-[60] w-full sm:w-[440px] lg:w-[480px] bg-[color:var(--bg-elevated)]/95 backdrop-blur-xl border-l border-[color:var(--border-subtle)] overflow-y-auto"
         >
-          <div className="p-8 lg:p-10 pt-20">
+          <div className="p-8 lg:p-10 pt-24">
             <button
               onClick={onClose}
               aria-label="Close project panel"
-              className="absolute top-5 right-5 w-9 h-9 flex items-center justify-center rounded-full border border-[color:var(--border-default)] text-fg-tertiary hover:text-fg-primary hover:border-[color:var(--border-strong)] transition-colors"
+              className="absolute top-5 right-5 z-[61] w-10 h-10 flex items-center justify-center rounded-full border border-[color:var(--border-default)] text-fg-tertiary hover:text-fg-primary hover:border-[color:var(--border-strong)] bg-black/40 backdrop-blur-sm transition-colors"
             >
               <svg
                 width="14"
