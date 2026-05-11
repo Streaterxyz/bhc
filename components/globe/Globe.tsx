@@ -178,6 +178,21 @@ export function Globe() {
     });
   }, []);
 
+  const closeProject = useCallback(() => {
+    setSelected(null);
+    resetView();
+  }, [resetView]);
+
+  // Escape key closes the project panel.
+  useEffect(() => {
+    if (!selected) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeProject();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [selected, closeProject]);
+
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
     const prefersReducedMotion = window.matchMedia(
@@ -209,6 +224,28 @@ export function Globe() {
 
     map.on("error", (e) => {
       console.error("[map error]", e?.error?.message || e);
+    });
+
+    // Click on empty map → close any open project panel.
+    // In deck.gl overlay mode, pin clicks are consumed by the hit-test layer
+    // and never reach this handler, so it only fires on background clicks.
+    map.on("click", () => {
+      setSelected((prev) => {
+        if (!prev) return prev;
+        // Defer the reset flyTo so this click handler returns cleanly.
+        requestAnimationFrame(() => {
+          map.flyTo({
+            center: SYDNEY,
+            zoom: 9.2,
+            pitch: 50,
+            bearing: -12,
+            duration: 1400,
+            essential: true,
+            padding: getHomePadding(window.innerWidth),
+          });
+        });
+        return null;
+      });
     });
 
     // Reveal the UI as soon as the style is parsed (sphere visible).
@@ -345,7 +382,7 @@ export function Globe() {
         updateTriggers: { getRadius: [activeSlug] },
       }),
 
-      // Core dot — clickable
+      // Core dot — visual only
       new ScatterplotLayer({
         id: "pin-core",
         data: projects,
@@ -355,6 +392,21 @@ export function Globe() {
         radiusUnits: "meters",
         radiusMinPixels: 3,
         radiusMaxPixels: 6,
+        pickable: false,
+      }),
+
+      // Invisible hit-test layer — generous click target so users don't have
+      // to land precisely on the 3-6px core dot. Sits above everything else.
+      new ScatterplotLayer({
+        id: "pin-hittest",
+        data: projects,
+        getPosition: (d: Project) => [d.coords[0], d.coords[1], 0],
+        getRadius: () => 5000,
+        getFillColor: () => [0, 0, 0, 0], // fully transparent
+        radiusUnits: "meters",
+        radiusMinPixels: 22,
+        radiusMaxPixels: 40,
+        stroked: false,
         pickable: true,
         onClick: (info) => {
           const p = info.object as Project | undefined;
@@ -413,23 +465,14 @@ export function Globe() {
       {/* Reset view button */}
       {ready && selected && (
         <button
-          onClick={() => {
-            setSelected(null);
-            resetView();
-          }}
+          onClick={closeProject}
           className="absolute bottom-10 left-6 lg:left-12 z-20 text-xs tracking-widest uppercase text-fg-secondary hover:text-fg-primary px-3 py-2 border border-[color:var(--border-default)] rounded-full backdrop-blur-md bg-black/30 transition-colors"
         >
           ← View all
         </button>
       )}
 
-      <ProjectPanel
-        project={selected}
-        onClose={() => {
-          setSelected(null);
-          resetView();
-        }}
-      />
+      <ProjectPanel project={selected} onClose={closeProject} />
 
       {/* Hidden screen-reader project list */}
       <ul className="sr-only">
