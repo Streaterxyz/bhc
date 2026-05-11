@@ -254,10 +254,12 @@ export function Globe() {
       }
 
       // Add deck.gl overlay for project pins.
-      // interleaved: false → renders as a single composite canvas ABOVE the map,
-      // avoiding tile-seam clipping of the glow halos.
+      // interleaved: true → deck.gl renders inside MapLibre's pipeline using its
+      // globe shaders. Critical for pin position accuracy at zoom-out where the
+      // globe curvature is visible; otherwise deck would project flat Mercator
+      // and pins would drift relative to the basemap.
       const overlay = new MapboxOverlay({
-        interleaved: false,
+        interleaved: true,
         layers: buildPinLayers(0, null),
       });
       map.addControl(overlay as unknown as maplibregl.IControl);
