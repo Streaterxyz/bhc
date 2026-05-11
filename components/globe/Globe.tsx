@@ -224,9 +224,11 @@ export function Globe() {
         }, 600);
       }
 
-      // Add deck.gl overlay for project pins
+      // Add deck.gl overlay for project pins.
+      // interleaved: false → renders as a single composite canvas ABOVE the map,
+      // avoiding tile-seam clipping of the glow halos.
       const overlay = new MapboxOverlay({
-        interleaved: true,
+        interleaved: false,
         layers: buildPinLayers(0, null),
       });
       map.addControl(overlay as unknown as maplibregl.IControl);
