@@ -184,7 +184,12 @@ export function Globe() {
       "(prefers-reduced-motion: reduce)"
     ).matches;
 
-    // Start zoomed way out — globe view from space
+    // Start zoomed way out — globe view from space.
+    // minZoom: 6 caps user zoom-out so the projection drift between MapLibre's
+    // globe basemap and deck.gl's Mercator pins (which only becomes visible
+    // below ~zoom 5) can't appear during free navigation. The cinematic intro
+    // starts at zoom 2.2 — drift exists briefly during the scripted flyTo but
+    // pins are pixel-sized and moving fast, so it's not perceptible.
     const map = new maplibregl.Map({
       container: containerRef.current,
       style: MAP_STYLE_URL,
@@ -195,7 +200,7 @@ export function Globe() {
       attributionControl: false,
       interactive: true,
       maxPitch: 70,
-      minZoom: 1,
+      minZoom: 6,
     });
 
     // Enable MapLibre v5 globe projection on style load.
@@ -254,12 +259,13 @@ export function Globe() {
       }
 
       // Add deck.gl overlay for project pins.
-      // interleaved: true → deck.gl renders inside MapLibre's pipeline using its
-      // globe shaders. Critical for pin position accuracy at zoom-out where the
-      // globe curvature is visible; otherwise deck would project flat Mercator
-      // and pins would drift relative to the basemap.
+      // interleaved: false → renders as a single composite canvas ABOVE the map,
+      // giving us clean halos with no tile-seam clipping and full pin visibility.
+      // The projection-drift trade-off of overlay mode is mitigated by capping
+      // map minZoom to 6 (set in the Map constructor) so the user can never
+      // navigate to a zoom level where the drift becomes visible.
       const overlay = new MapboxOverlay({
-        interleaved: true,
+        interleaved: false,
         layers: buildPinLayers(0, null),
       });
       map.addControl(overlay as unknown as maplibregl.IControl);
