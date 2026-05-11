@@ -184,32 +184,23 @@ export function Globe() {
       "(prefers-reduced-motion: reduce)"
     ).matches;
 
-    // Start zoomed way out — globe view from space.
-    // minZoom: 6 caps user zoom-out so the projection drift between MapLibre's
-    // globe basemap and deck.gl's Mercator pins (which only becomes visible
-    // below ~zoom 5) can't appear during free navigation. The cinematic intro
-    // starts at zoom 2.2 — drift exists briefly during the scripted flyTo but
-    // pins are pixel-sized and moving fast, so it's not perceptible.
+    // Mercator projection for both basemap and deck.gl pins — guarantees that
+    // pin screen positions match the basemap at every zoom level. The previous
+    // globe projection produced a visible drift on zoom-out because deck.gl in
+    // overlay mode projects in Mercator while MapLibre globe projects on a sphere.
+    // We keep the cinematic feel via a wide initial zoom + flyTo, just on a
+    // flat-projected world instead of a curved sphere.
     const map = new maplibregl.Map({
       container: containerRef.current,
       style: MAP_STYLE_URL,
       center: SYDNEY,
-      zoom: prefersReducedMotion ? 9 : 2.2,
+      zoom: prefersReducedMotion ? 9 : 2.6,
       pitch: prefersReducedMotion ? 50 : 0,
       bearing: 0,
       attributionControl: false,
       interactive: true,
       maxPitch: 70,
-      minZoom: 6,
-    });
-
-    // Enable MapLibre v5 globe projection on style load.
-    map.on("style.load", () => {
-      try {
-        map.setProjection({ type: "globe" });
-      } catch (e) {
-        console.warn("Globe projection not available:", e);
-      }
+      minZoom: 2,
     });
 
     mapRef.current = map;
