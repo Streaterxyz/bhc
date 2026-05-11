@@ -18,8 +18,14 @@ const SYDNEY: LngLatLike = [151.21, -33.87];
 const MAP_STYLE_URL = "https://tiles.openfreemap.org/styles/dark";
 
 /**
- * Walk the loaded style layers and push them toward our monochrome palette.
+ * Walk the loaded style layers and push them toward the BHC monochrome palette.
  * Done at runtime so we can use the OpenFreeMap-hosted style without forking it.
+ *
+ * Contrast hierarchy against the #000 page background:
+ *   space/water (#070707) → landmass (#1f1f1f) → buildings (#2c2c2c)
+ *   → minor roads (#363636) → major roads (#4a4a4a) → boundaries (#3a3a3a)
+ *
+ * The landmass jump from #07 → #1f is what gives the globe its visible silhouette.
  */
 function applyMonochromeOverrides(map: MapLibreMap) {
   const layers = map.getStyle().layers ?? [];
@@ -28,9 +34,10 @@ function applyMonochromeOverrides(map: MapLibreMap) {
       const id = layer.id;
       const t = layer.type;
 
-      // Background: solid black
+      // Background — the sphere "ground" colour. Sits just above pure black so
+      // it's visible against #000 space.
       if (t === "background") {
-        map.setPaintProperty(id, "background-color", "#000000");
+        map.setPaintProperty(id, "background-color", "#1a1a1a");
         continue;
       }
 
@@ -40,61 +47,69 @@ function applyMonochromeOverrides(map: MapLibreMap) {
         continue;
       }
 
-      // Water: very dark, near-black
+      // Water — darker than land so coastlines read.
       if (/water|ocean|sea/i.test(id)) {
         if (t === "fill") {
-          map.setPaintProperty(id, "fill-color", "#040404");
+          map.setPaintProperty(id, "fill-color", "#070707");
           map.setPaintProperty(id, "fill-opacity", 1);
         }
         continue;
       }
 
-      // Park / landcover / landuse — graduated dark greys
+      // Park / landcover / landuse — medium-dark grey
       if (/park|landcover|landuse|wood|grass|forest/i.test(id)) {
         if (t === "fill") {
-          map.setPaintProperty(id, "fill-color", "#0c0c0c");
-          map.setPaintProperty(id, "fill-opacity", 0.7);
+          map.setPaintProperty(id, "fill-color", "#1f1f1f");
+          map.setPaintProperty(id, "fill-opacity", 0.85);
         }
         continue;
       }
 
-      // Buildings — slight contrast
+      // Buildings — clearly visible against land
       if (/building/i.test(id)) {
         if (t === "fill") {
-          map.setPaintProperty(id, "fill-color", "#161616");
-          map.setPaintProperty(id, "fill-opacity", 0.8);
+          map.setPaintProperty(id, "fill-color", "#2c2c2c");
+          map.setPaintProperty(id, "fill-opacity", 0.9);
         }
         if (t === "fill-extrusion") {
-          map.setPaintProperty(id, "fill-extrusion-color", "#161616");
-          map.setPaintProperty(id, "fill-extrusion-opacity", 0.9);
+          map.setPaintProperty(id, "fill-extrusion-color", "#2c2c2c");
+          map.setPaintProperty(id, "fill-extrusion-opacity", 0.95);
         }
         continue;
       }
 
-      // Roads — subtle hairlines
-      if (/road|tunnel|bridge|highway|motorway|street|transportation/i.test(id)) {
+      // Roads — major roads brighter than minor for hierarchy
+      if (/motorway|highway|primary|trunk/i.test(id)) {
         if (t === "line") {
-          map.setPaintProperty(id, "line-color", "#1f1f1f");
-          map.setPaintProperty(id, "line-opacity", 0.85);
+          map.setPaintProperty(id, "line-color", "#4a4a4a");
+          map.setPaintProperty(id, "line-opacity", 0.95);
         }
         continue;
       }
 
-      // Boundaries
+      if (/road|tunnel|bridge|street|transportation|secondary|tertiary/i.test(id)) {
+        if (t === "line") {
+          map.setPaintProperty(id, "line-color", "#363636");
+          map.setPaintProperty(id, "line-opacity", 0.9);
+        }
+        continue;
+      }
+
+      // Boundaries — bright enough to read on the landmass
       if (/boundary|admin/i.test(id)) {
         if (t === "line") {
-          map.setPaintProperty(id, "line-color", "#262626");
-          map.setPaintProperty(id, "line-opacity", 0.6);
+          map.setPaintProperty(id, "line-color", "#3a3a3a");
+          map.setPaintProperty(id, "line-opacity", 0.7);
         }
         continue;
       }
 
-      // Generic fill fallback — push toward dark
+      // Generic fill fallback — landmass tone
       if (t === "fill") {
-        map.setPaintProperty(id, "fill-color", "#0a0a0a");
+        map.setPaintProperty(id, "fill-color", "#1c1c1c");
       }
       if (t === "line") {
-        map.setPaintProperty(id, "line-color", "#1a1a1a");
+        map.setPaintProperty(id, "line-color", "#2e2e2e");
       }
     } catch {
       // Ignore — some properties aren't applicable to all layer types
