@@ -304,13 +304,13 @@ export function Globe() {
     const pulse = 0.5 + 0.5 * Math.sin(phase * Math.PI * 2);
 
     return [
-      // Outer pulsing halo
+      // Outer pulsing halo — reduced by 50% from original to ease cluster crowding.
       new ScatterplotLayer({
         id: "pin-halo",
         data: projects,
         getPosition: (d: Project) => [d.coords[0], d.coords[1], 0],
         getRadius: (d: Project) =>
-          d.slug === activeSlug ? 6000 + pulse * 3500 : 3500 + pulse * 2500,
+          d.slug === activeSlug ? 3000 + pulse * 1750 : 1750 + pulse * 1250,
         getFillColor: (d: Project) => [
           244,
           194,
@@ -318,8 +318,8 @@ export function Globe() {
           d.slug === activeSlug ? 140 : 60 + pulse * 40,
         ],
         radiusUnits: "meters",
-        radiusMinPixels: 8,
-        radiusMaxPixels: 36,
+        radiusMinPixels: 4,
+        radiusMaxPixels: 18,
         stroked: false,
         pickable: false,
         updateTriggers: {
