@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { BhcLogo } from "@/components/brand/BhcLogo";
 
 const NAV_LINKS = [
   { href: "/projects", label: "Projects" },
@@ -32,9 +33,9 @@ export function Header() {
         <Link
           href="/"
           aria-label="BHC home"
-          className="font-extrabold text-xl tracking-tight"
+          className="text-fg-primary hover:text-fg-secondary transition-colors"
         >
-          BHC
+          <BhcLogo className="h-5 w-auto" aria-label="Brendon Hill Consultancy home" />
         </Link>
 
         <nav className="hidden md:flex items-center gap-8">
