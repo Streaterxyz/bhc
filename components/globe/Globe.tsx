@@ -216,6 +216,10 @@ export function Globe() {
       interactive: true,
       maxPitch: 70,
       minZoom: 2,
+      // Critical for hero UX: don't trap wheel events for zoom — let the page
+      // scroll naturally past the hero. Users can still zoom via pinch on
+      // trackpad, +/- buttons, double-click, and clicking project pins.
+      scrollZoom: false,
     });
 
     mapRef.current = map;
