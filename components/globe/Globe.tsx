@@ -183,6 +183,16 @@ export function Globe() {
     resetView();
   }, [resetView]);
 
+  const zoomBy = useCallback((delta: number) => {
+    const map = mapRef.current;
+    if (!map) return;
+    map.easeTo({
+      zoom: map.getZoom() + delta,
+      duration: 350,
+      easing: (t) => t * (2 - t),
+    });
+  }, []);
+
   // Escape key closes the project panel.
   useEffect(() => {
     if (!selected) return;
@@ -474,6 +484,30 @@ export function Globe() {
         >
           ← View all
         </button>
+      )}
+
+      {/* Zoom controls — bottom right, away from hero copy + scroll cue */}
+      {ready && (
+        <div className="absolute bottom-10 right-6 lg:right-12 z-20 flex flex-col gap-1.5">
+          <button
+            onClick={() => zoomBy(1)}
+            aria-label="Zoom in"
+            className="w-10 h-10 flex items-center justify-center rounded-full border border-[color:var(--border-default)] text-fg-secondary hover:text-fg-primary hover:border-[color:var(--accent)] backdrop-blur-md bg-black/40 transition-colors"
+          >
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
+              <path d="M6 1V11M1 6H11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+          </button>
+          <button
+            onClick={() => zoomBy(-1)}
+            aria-label="Zoom out"
+            className="w-10 h-10 flex items-center justify-center rounded-full border border-[color:var(--border-default)] text-fg-secondary hover:text-fg-primary hover:border-[color:var(--accent)] backdrop-blur-md bg-black/40 transition-colors"
+          >
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
+              <path d="M1 6H11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+          </button>
+        </div>
       )}
 
       <ProjectPanel project={selected} onClose={closeProject} />
