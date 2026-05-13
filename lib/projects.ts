@@ -35,6 +35,17 @@ export type Project = {
   summary: string;
   metrics: { label: string; value: string }[];
   featured?: boolean;
+
+  // Optional long-form case-study fields — render only when present.
+  // Will be migrated to MDX in content/projects/*.mdx in Phase 2.
+  challenge?: string;
+  approach?: string;
+  outcome?: string;
+  testimonial?: {
+    quote: string;
+    name: string;
+    role: string;
+  };
 };
 
 export const SERVICE_LABELS: Record<ServiceKey, string> = {
@@ -448,4 +459,27 @@ export function getFeaturedProjects() {
 
 export function getProjectBySlug(slug: string) {
   return projects.find((p) => p.slug === slug);
+}
+
+/**
+ * Find projects related to the given slug. Scored by overlap on suburb,
+ * type, and services. Returns up to `limit` results.
+ */
+export function getRelatedProjects(slug: string, limit = 3): Project[] {
+  const base = getProjectBySlug(slug);
+  if (!base) return [];
+
+  const scored = projects
+    .filter((p) => p.slug !== slug)
+    .map((p) => {
+      let score = 0;
+      if (p.suburb === base.suburb) score += 4;
+      if (p.type === base.type) score += 3;
+      score += p.services.filter((s) => base.services.includes(s)).length;
+      return { project: p, score };
+    })
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit);
+
+  return scored.map((s) => s.project);
 }
