@@ -21,8 +21,8 @@ export function SelectedWork() {
 
   return (
     <section
-      id="after-hero"
-      className="bg-bg-base py-24 lg:py-32 px-6 lg:px-12 scroll-mt-16"
+      aria-labelledby="selected-work-heading"
+      className="bg-bg-base py-24 lg:py-32 px-6 lg:px-12 scroll-mt-16 border-t border-[color:var(--border-subtle)]"
     >
       <div className="max-w-[1440px] mx-auto">
         {/* Section header */}
@@ -35,7 +35,7 @@ export function SelectedWork() {
         >
           <div className="max-w-3xl">
             <p className="eyebrow mb-5">Selected Work</p>
-            <h2 className="headline">
+            <h2 id="selected-work-heading" className="headline">
               Real venues.{" "}
               <span className="text-[color:var(--accent)]">Real impact.</span>
             </h2>
