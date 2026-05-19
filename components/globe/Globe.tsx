@@ -152,6 +152,17 @@ export function Globe() {
   // We mutate this on each frame and rebuild the deck layer.
   const phaseRef = useRef(0);
 
+  // Mirror of `selected` so the rotation effect can read the current value
+  // without being torn down and re-set-up on each selection change.
+  const selectedRef = useRef<Project | null>(null);
+
+  // Imperative handle exposed by the rotation system so the selection effect
+  // can pause/resume without re-creating event listeners.
+  const rotationCtlRef = useRef<{
+    pause: () => void;
+    scheduleResume: (delayMs: number) => void;
+  } | null>(null);
+
   const flyToProject = useCallback((p: Project) => {
     if (!mapRef.current) return;
     mapRef.current.flyTo({
@@ -202,6 +213,162 @@ export function Globe() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [selected, closeProject]);
+
+  // Keep selectedRef in sync for the rotation effect.
+  useEffect(() => {
+    selectedRef.current = selected;
+  }, [selected]);
+
+  // Pause / resume the idle rotation when selection changes.
+  // Separate from the rotation setup effect so we don't tear down listeners
+  // on every selection toggle.
+  useEffect(() => {
+    const ctl = rotationCtlRef.current;
+    if (!ctl) return;
+    if (selected) {
+      ctl.pause();
+    } else {
+      // 2s grace after the user closes the panel before idle rotation resumes —
+      // gives the reset flyTo time to land.
+      ctl.scheduleResume(2000);
+    }
+  }, [selected]);
+
+  // ─────────────── Idle 360° rotation ───────────────
+  // After the cinematic intro lands, the camera slowly orbits the current
+  // centre at ~6°/sec (60s per full rotation). Pauses on any user interaction,
+  // pin selection, or tab hide. Resumes after a short idle.
+  useEffect(() => {
+    if (!ready) return;
+    const map = mapRef.current;
+    if (!map) return;
+    if (typeof window === "undefined") return;
+
+    const prefersReducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches;
+    const isMobile = window.innerWidth < 768;
+    if (prefersReducedMotion || isMobile) return;
+
+    const DEG_PER_SEC = 6; // full rotation every 60s
+
+    let raf: number | null = null;
+    let lastTs = 0;
+    let resumeTimer: number | null = null;
+    // `userPaused` blocks rotation until an explicit scheduleResume call.
+    // The library-driven flyTo / easeTo animations would otherwise count as
+    // "moves" and re-pause us forever.
+    let userPaused = false;
+    let started = false;
+
+    const stop = () => {
+      if (raf !== null) {
+        cancelAnimationFrame(raf);
+        raf = null;
+      }
+    };
+
+    const start = () => {
+      if (raf !== null) return;
+      if (userPaused) return;
+      if (selectedRef.current) return;
+      if (document.hidden) return;
+      lastTs = performance.now();
+      const tick = (ts: number) => {
+        const dt = (ts - lastTs) / 1000;
+        lastTs = ts;
+        // setBearing instead of easeTo to avoid triggering moveend bouncing.
+        map.setBearing((map.getBearing() + DEG_PER_SEC * dt) % 360);
+        raf = requestAnimationFrame(tick);
+      };
+      raf = requestAnimationFrame(tick);
+      started = true;
+    };
+
+    const pause = () => {
+      userPaused = true;
+      stop();
+      if (resumeTimer !== null) {
+        window.clearTimeout(resumeTimer);
+        resumeTimer = null;
+      }
+    };
+
+    const scheduleResume = (delayMs: number) => {
+      if (resumeTimer !== null) window.clearTimeout(resumeTimer);
+      resumeTimer = window.setTimeout(() => {
+        resumeTimer = null;
+        userPaused = false;
+        start();
+      }, delayMs);
+    };
+
+    // Initial start — wait for the cinematic intro to settle.
+    // Intro is 3.2s flyTo + 600ms delay before flyTo = ~3.8s.
+    // Add 1.5s settle grace = ~5.3s total.
+    const initialTimer = window.setTimeout(() => {
+      if (!selectedRef.current) start();
+    }, 5300);
+
+    // Expose imperative pause/resume to the selection effect.
+    rotationCtlRef.current = { pause, scheduleResume };
+
+    // Distinguish user-initiated moves from library-driven flyTo.
+    // MapLibre fires `dragstart`/`zoomstart`/etc only for user input;
+    // flyTo / easeTo / jumpTo do not. So these are safe to wire as pause triggers.
+    const onUserStart = () => {
+      pause();
+    };
+    const onUserEnd = () => {
+      // After the user releases, resume after 4s of idle —
+      // but only if no panel is open.
+      if (selectedRef.current) return;
+      scheduleResume(4000);
+    };
+
+    map.on("mousedown", onUserStart);
+    map.on("touchstart", onUserStart);
+    map.on("wheel", onUserStart);
+    map.on("dragstart", onUserStart);
+    map.on("zoomstart", onUserStart);
+    map.on("pitchstart", onUserStart);
+    map.on("rotatestart", onUserStart);
+
+    map.on("dragend", onUserEnd);
+    map.on("zoomend", onUserEnd);
+    map.on("pitchend", onUserEnd);
+    map.on("rotateend", onUserEnd);
+    map.on("touchend", onUserEnd);
+
+    const onVisibility = () => {
+      if (document.hidden) {
+        stop();
+      } else if (!userPaused && !selectedRef.current && started) {
+        start();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+
+    return () => {
+      window.clearTimeout(initialTimer);
+      if (resumeTimer !== null) window.clearTimeout(resumeTimer);
+      stop();
+      rotationCtlRef.current = null;
+      map.off("mousedown", onUserStart);
+      map.off("touchstart", onUserStart);
+      map.off("wheel", onUserStart);
+      map.off("dragstart", onUserStart);
+      map.off("zoomstart", onUserStart);
+      map.off("pitchstart", onUserStart);
+      map.off("rotatestart", onUserStart);
+      map.off("dragend", onUserEnd);
+      map.off("zoomend", onUserEnd);
+      map.off("pitchend", onUserEnd);
+      map.off("rotateend", onUserEnd);
+      map.off("touchend", onUserEnd);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [ready]);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
