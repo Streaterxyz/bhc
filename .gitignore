@@ -53,3 +53,6 @@ BRANDING\ /
 
 # Source documents (not for repo)
 BHC Capability Statement*.pdf
+
+# Source assets (originals stay local)
+Clients logos-*

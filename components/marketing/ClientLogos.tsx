@@ -1,23 +1,32 @@
 "use client";
 
+import Image from "next/image";
 import { motion } from "framer-motion";
 
-// Real client names sourced from the BHC Capability Statement.
-// Rendered as typeset wordmarks until SVG logo assets are provided —
-// keeps the section production-ready without bitmap placeholders.
-const CLIENTS = [
-  { name: "The Orchard", style: "serif italic" },
-  { name: "The Grounds of Alexandria", style: "serif" },
-  { name: "Sydney Restaurant Group", style: "sans" },
-  { name: "Sonnel", style: "sans uppercase tracking-[0.16em]" },
-  { name: "Volo Group", style: "sans uppercase tracking-[0.18em]" },
-  { name: "Cabravale Club Resort", style: "serif" },
-  { name: "Ole Lynggaard", style: "serif italic" },
-  { name: "GellaFrenda", style: "sans" },
-  { name: "Four Pillars", style: "serif uppercase tracking-[0.12em]" },
-  { name: "Employees Only Sydney", style: "sans uppercase tracking-[0.14em]" },
-  { name: "El Patron", style: "sans uppercase tracking-[0.18em]" },
-  { name: "Bianco", style: "serif italic" },
+type ClientLogo = {
+  name: string;
+  src: string;
+  /** Visual weight per logo so we can subtly normalise their size. */
+  scale?: number;
+};
+
+// Real client logos sourced from the BHC capability statement client list.
+// All logos are supplied as white-on-transparent PNGs designed for dark backgrounds.
+const CLIENTS: ClientLogo[] = [
+  { name: "The Grounds of Alexandria", src: "/clients/grounds-of-alexandria.png" },
+  { name: "Sonnel Group", src: "/clients/sonnel-group.png" },
+  { name: "Sydney Restaurant Group", src: "/clients/sydney-restaurant-group.png" },
+  { name: "Ovolo Group", src: "/clients/ovolo-group.png" },
+  { name: "The Orchard", src: "/clients/the-orchard.png" },
+  { name: "Four Pillars Gin", src: "/clients/four-pillars-gin.png" },
+  { name: "Employees Only Sydney", src: "/clients/employees-only-sydney.png" },
+  { name: "Bianco", src: "/clients/bianco.png" },
+  { name: "Ole Lynggaard", src: "/clients/ole-lynggaard.png" },
+  { name: "Olsen Palmer", src: "/clients/olsen-palmer.png" },
+  { name: "El Patron", src: "/clients/el-patron.png" },
+  { name: "Gella Frenda", src: "/clients/gella-frenda.png" },
+  { name: "Belance", src: "/clients/belance.png" },
+  { name: "Goliath Coffee Roasters", src: "/clients/goliath-coffee.png" },
 ];
 
 export function ClientLogos() {
@@ -42,8 +51,8 @@ export function ClientLogos() {
           </p>
         </motion.div>
 
-        {/* Logo grid — typeset wordmarks until SVG assets arrive */}
-        <ul className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-px bg-[color:var(--border-subtle)] border border-[color:var(--border-subtle)]">
+        {/* Logo grid */}
+        <ul className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-px bg-[color:var(--border-subtle)] border border-[color:var(--border-subtle)]">
           {CLIENTS.map((client, i) => (
             <motion.li
               key={client.name}
@@ -55,19 +64,18 @@ export function ClientLogos() {
                 ease: [0.16, 1, 0.3, 1],
                 delay: 0.04 * i,
               }}
-              className="group bg-bg-base h-24 lg:h-28 flex items-center justify-center px-4 hover:bg-bg-elevated transition-colors duration-500"
+              className="group bg-bg-base h-24 lg:h-28 flex items-center justify-center px-6 lg:px-8 py-6 transition-colors duration-500 hover:bg-bg-elevated"
             >
-              <span
-                className={`text-fg-tertiary group-hover:text-fg-primary transition-colors duration-500 text-center text-sm lg:text-base font-medium leading-tight ${
-                  client.style.includes("serif") ? "font-serif" : ""
-                } ${
-                  client.style.includes("italic") ? "italic" : ""
-                } ${
-                  client.style.includes("uppercase") ? "uppercase" : ""
-                } ${client.style.match(/tracking-\[[^\]]+\]/)?.[0] ?? ""}`}
-              >
-                {client.name}
-              </span>
+              <Image
+                src={client.src}
+                alt={`${client.name} — BHC client`}
+                width={200}
+                height={80}
+                className="max-h-full max-w-full w-auto h-auto object-contain opacity-60 group-hover:opacity-100 transition-opacity duration-500"
+                style={{
+                  filter: "brightness(0) invert(1)",
+                }}
+              />
             </motion.li>
           ))}
         </ul>
