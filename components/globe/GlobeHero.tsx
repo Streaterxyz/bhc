@@ -33,16 +33,19 @@ export function GlobeHero() {
             className="max-w-3xl"
           >
             <div className="eyebrow mb-5">
-              Brendon Hill Consultancy · Hospitality
+              Hospitality Consulting · Embedded · Accountable
             </div>
             <h1 className="display text-fg-primary">
-              Everything Elevated.
+              Your Head Office.
               <br />
-              <span className="text-[color:var(--accent)]">No Exceptions.</span>
+              <span className="text-[color:var(--accent)]">
+                Without the Overhead.
+              </span>
             </h1>
             <p className="body-lg mt-6 max-w-xl">
-              A people-led hospitality consultancy. Real projects across
-              Greater Sydney — each one plotted, with the impact to prove it.
+              Strategic direction and boots-on-ground execution — for
+              hospitality businesses that are ready to grow. Real projects
+              across Greater Sydney, plotted with the impact to prove it.
             </p>
           </motion.div>
         </div>

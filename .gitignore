@@ -50,3 +50,6 @@ BRANDING\ /
 
 # Claude harness
 .claude/launch.json
+
+# Source documents (not for repo)
+BHC Capability Statement*.pdf

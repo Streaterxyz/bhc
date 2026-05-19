@@ -11,18 +11,18 @@ type Pillar = {
 const PILLARS: Pillar[] = [
   {
     number: "01",
-    title: "VIP Mindset",
-    body: "Everyone gets the VIP treatment — not because they ask, but because it's how we work. We focus on the moments that matter, creating experiences people remember and come back for. Excellence isn't occasional. It's consistent.",
+    title: "Real-World Experience",
+    body: "We've worked across every level of hospitality — from the floor to the boardroom. We don't diagnose problems from a spreadsheet. We've stood where your team stands and we know what it takes to fix things that actually need fixing.",
   },
   {
     number: "02",
-    title: "Details Are The Difference",
-    body: "The smallest details create the biggest impact. We know where to look, what to fix, and how to move fast. When something can be better, we make it better — smoothly, intentionally, and with purpose.",
+    title: "Diagnosis Over Opinion",
+    body: "Any consultant can identify obvious problems. BHC goes further — we understand why the problem exists, what it's costing you, and how to fix the root cause. We bring a framework, not just an observation.",
   },
   {
     number: "03",
-    title: "Personal, Always",
-    body: "We don't do templates. We get close to the business, understand the vision, and treat every goal like it's our own. It takes time, energy, and care — and that's exactly what we bring.",
+    title: "Accountability That Shows Up",
+    body: "We're a dedicated consultancy, not a side project. We show up when it counts, document our work, report on progress, and take responsibility for outcomes. When the stakes are high, you need a partner who doesn't disappear.",
   },
 ];
 
@@ -38,7 +38,7 @@ export function WhyBHC() {
         aria-hidden
         className="hidden lg:block absolute top-24 left-6 label-vertical text-[0.7rem] tracking-[0.3em] uppercase text-fg-muted"
       >
-        02 · Why BHC
+        06 · Why BHC
       </div>
 
       <div className="max-w-[1440px] mx-auto">
@@ -52,13 +52,16 @@ export function WhyBHC() {
         >
           <p className="eyebrow mb-5">Why BHC</p>
           <h2 id="why-bhc-heading" className="headline">
-            Everything Elevated.
+            Real-world experience.
             <br />
-            <span className="text-[color:var(--accent)]">No Exceptions.</span>
+            Commercial rigour.{" "}
+            <span className="text-[color:var(--accent)]">
+              Genuine accountability.
+            </span>
           </h2>
           <p className="body-lg mt-6 max-w-2xl">
-            Three principles shape every engagement — from a single venue
-            tune-up to multi-site group strategy.
+            Three principles that separate BHC from advice-only consultants —
+            from a single venue tune-up to multi-site group strategy.
           </p>
         </motion.div>
 

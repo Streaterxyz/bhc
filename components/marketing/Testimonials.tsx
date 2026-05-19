@@ -11,25 +11,25 @@ type Testimonial = {
 const TESTIMONIALS: Testimonial[] = [
   {
     quote:
-      "BHC's guidance in re-developing our beverage program was a game-changer. He not only improved our team's skills through comprehensive training but also optimised our docket system, ensuring efficient service. His strategic brand partnerships brought exciting new offerings to our venues, elevating our customer experience.",
+      "BHC has been a genuinely valuable partner for Sonnel Group. Their hands-on approach has elevated our service standards, grown beverage sales, and built operational systems our teams can actually follow. Reliable, proactive, and genuinely invested in our success.",
+    name: "Jacqui Corbett",
+    role: "General Manager Operations · Sonnel Group",
+  },
+  {
+    quote:
+      "BHC's strategic input was a game-changer. They didn't just give us ideas — they gave us the tools to execute them. The work landed across our teams, our service standards, and our commercial performance.",
     name: "Ramzey Chocker",
     role: "The Grounds of Alexandria",
   },
   {
     quote:
-      "Brendon and the team's work with Belancē brought immediate impact. He helped us create premium pour experiences, elevate in-house spend, and develop strategic brand partnerships. His experiential trunk shows enriched engagement and aligned perfectly with our brand values of simplicity, sustainability, and luxury tailoring.",
+      "We increased in-house spend and created a premium experience. Brendon understood our brand's ethos and delivered value — aligning beverage, partnerships, and experience with our vision of simplicity, sustainability, and luxury tailoring.",
     name: "Theodore English",
     role: "Belancē Tailors",
   },
   {
     quote:
-      "As a platform reshaping suburban narratives, we needed the right connections. Brendon's expertise in partnerships and beverage advertising was invaluable, helping us secure key relationships across Western Sydney that enriched our content and strengthened our network.",
-    name: "Dean Boone",
-    role: "The WEST Journal",
-  },
-  {
-    quote:
-      "BHC's work with The Viral Group was transformative. His audit improved our beverage offerings, boosted profitability, and elevated customer experience — leading to stronger satisfaction and repeat business. His expertise made a real impact where it counts.",
+      "BHC's work with The Viral Group was transformative. The audit improved our beverage offerings, boosted profitability, and elevated customer experience — leading to stronger satisfaction and repeat business. The impact landed where it counts.",
     name: "Adam Levine",
     role: "The Viral Group",
   },
@@ -46,7 +46,7 @@ export function Testimonials() {
         aria-hidden
         className="hidden lg:block absolute top-24 left-6 label-vertical text-[0.7rem] tracking-[0.3em] uppercase text-fg-muted"
       >
-        04 · Testimonials
+        07 · Testimonials
       </div>
 
       <div className="max-w-[1440px] mx-auto">

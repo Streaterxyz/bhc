@@ -24,7 +24,7 @@ export function CTABlock() {
         aria-hidden
         className="hidden lg:block absolute top-24 left-6 label-vertical text-[0.7rem] tracking-[0.3em] uppercase text-fg-muted"
       >
-        05 · Get In Touch
+        09 · Get In Touch
       </div>
 
       <div className="relative max-w-[1440px] mx-auto lg:pl-12">
@@ -35,18 +35,18 @@ export function CTABlock() {
           transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
           className="max-w-4xl"
         >
-          <p className="eyebrow mb-6">Let&apos;s Build Something Exceptional</p>
+          <p className="eyebrow mb-6">Get In Touch</p>
 
           <h2 id="cta-heading" className="display mb-8">
-            Ready to elevate
+            Let&apos;s build something
             <br />
-            <span className="text-[color:var(--accent)]">your venue?</span>
+            <span className="text-[color:var(--accent)]">exceptional.</span>
           </h2>
 
           <p className="body-lg max-w-2xl mb-12">
-            A free 15-minute call to talk through where the business is, where
-            you want it, and whether we&apos;re the right fit to help you get
-            there. No prep needed.
+            If your business is ready for genuine strategic partnership —
+            embedded, accountable, and focused on results — we&apos;d like to
+            talk. A free 15-minute call to see if we&apos;re the right fit.
           </p>
 
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
