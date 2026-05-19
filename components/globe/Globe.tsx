@@ -303,12 +303,12 @@ export function Globe() {
       }, delayMs);
     };
 
-    // Initial start — wait for the cinematic intro to settle.
-    // Intro is 3.2s flyTo + 600ms delay before flyTo = ~3.8s.
-    // Add 1.5s settle grace = ~5.3s total.
+    // Initial start — kick in the moment the cinematic intro flyTo finishes.
+    // Intro = 600ms pre-flyTo delay + 3200ms flyTo duration = 3800ms total.
+    // No settle grace — rotation flows straight out of the intro animation.
     const initialTimer = window.setTimeout(() => {
       if (!selectedRef.current) start();
-    }, 5300);
+    }, 3800);
 
     // Expose imperative pause/resume to the selection effect.
     rotationCtlRef.current = { pause, scheduleResume };
@@ -320,10 +320,10 @@ export function Globe() {
       pause();
     };
     const onUserEnd = () => {
-      // After the user releases, resume after 4s of idle —
+      // After the user releases, resume after 1s of idle —
       // but only if no panel is open.
       if (selectedRef.current) return;
-      scheduleResume(4000);
+      scheduleResume(1000);
     };
 
     map.on("mousedown", onUserStart);
