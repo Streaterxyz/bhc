@@ -9,8 +9,90 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import { projects, type Project } from "@/lib/projects";
 import { ProjectPanel } from "./ProjectPanel";
 
-// Sydney centre — used as the "settle" target after the cinematic intro
+// Sydney centre — used as a fallback only. The cinematic "home" camera below
+// is now centred on the actual pin centroid so rotation orbits the pin cluster.
 const SYDNEY: LngLatLike = [151.21, -33.87];
+
+// ─────────────── Pin extent + rotation-safe camera ───────────────
+// Computed once at module load.
+const PIN_BBOX = projects.reduce(
+  (acc, p) => {
+    const [lng, lat] = p.coords;
+    if (lng < acc.minLng) acc.minLng = lng;
+    if (lng > acc.maxLng) acc.maxLng = lng;
+    if (lat < acc.minLat) acc.minLat = lat;
+    if (lat > acc.maxLat) acc.maxLat = lat;
+    return acc;
+  },
+  { minLng: Infinity, maxLng: -Infinity, minLat: Infinity, maxLat: -Infinity },
+);
+
+const PIN_CENTROID: LngLatLike = [
+  (PIN_BBOX.minLng + PIN_BBOX.maxLng) / 2,
+  (PIN_BBOX.minLat + PIN_BBOX.maxLat) / 2,
+];
+
+/**
+ * Bounding box of all pins, inflated by √2 so the bbox fits the visible map
+ * area at every possible bearing. Used by the mobile home-camera so pins
+ * never leave the viewport during the cinematic auto-rotation.
+ *
+ * Geometric basis: the smallest square that contains a rectangle (w×h) at
+ * any rotation angle has side length √2·max(w, h). Half-side is the
+ * centre-to-edge distance the camera must accommodate.
+ */
+function getRotationSafeBounds(): [[number, number], [number, number]] {
+  const w = PIN_BBOX.maxLng - PIN_BBOX.minLng;
+  const h = PIN_BBOX.maxLat - PIN_BBOX.minLat;
+  const cx = (PIN_BBOX.minLng + PIN_BBOX.maxLng) / 2;
+  const cy = (PIN_BBOX.minLat + PIN_BBOX.maxLat) / 2;
+  const half = (Math.max(w, h) * Math.SQRT2) / 2;
+  return [
+    [cx - half, cy - half],
+    [cx + half, cy + half],
+  ];
+}
+
+/**
+ * Returns the "home" camera (no project selected) for a given viewport.
+ *
+ *   Mobile (<768px): pitch 30°, zoom dynamically fitted to the rotation-safe
+ *     bbox so the pin cluster stays inside the viewport for every bearing.
+ *   Desktop (≥768px): pitch 50° (dramatic), zoom 9.2 (matches the original
+ *     framing).
+ *
+ * Centre is always PIN_CENTROID so the auto-rotation orbits the actual pin
+ * cluster rather than Sydney CBD.
+ */
+function getHomeCamera(
+  map: MapLibreMap,
+  width: number,
+  height: number,
+  bearing = -12,
+) {
+  const padding = getHomePadding(width, height);
+  if (width < 768) {
+    const cam = map.cameraForBounds(getRotationSafeBounds(), {
+      padding,
+      pitch: 30,
+      bearing: 0,
+    });
+    return {
+      center: PIN_CENTROID,
+      zoom: cam?.zoom ?? 8.4, // 8.4 fallback ≈ what cameraForBounds returns at 375px
+      pitch: 30,
+      bearing,
+      padding,
+    };
+  }
+  return {
+    center: PIN_CENTROID,
+    zoom: 9.2,
+    pitch: 50,
+    bearing,
+    padding,
+  };
+}
 
 /**
  * Camera padding for the "home" view. On desktop we push the focal point right
@@ -185,15 +267,12 @@ export function Globe() {
   }, []);
 
   const resetView = useCallback(() => {
-    if (!mapRef.current) return;
-    mapRef.current.flyTo({
-      center: SYDNEY,
-      zoom: 9.2,
-      pitch: 50,
-      bearing: -12,
+    const map = mapRef.current;
+    if (!map) return;
+    map.flyTo({
+      ...getHomeCamera(map, window.innerWidth, window.innerHeight),
       duration: 1400,
       essential: true,
-      padding: getHomePadding(window.innerWidth, window.innerHeight),
     });
   }, []);
 
@@ -255,10 +334,11 @@ export function Globe() {
     const prefersReducedMotion = window.matchMedia(
       "(prefers-reduced-motion: reduce)"
     ).matches;
-    const isMobile = window.innerWidth < 768;
-    if (prefersReducedMotion || isMobile) return;
+    if (prefersReducedMotion) return;
+    // Rotation runs on mobile too — the camera now uses a rotation-safe zoom
+    // (see getHomeCamera) so pins stay in the viewport at every bearing.
 
-    const DEG_PER_SEC = 6; // full rotation every 60s
+    const DEG_PER_SEC = 6; // full rotation every 60s, both desktop + mobile
 
     let raf: number | null = null;
     let lastTs = 0;
@@ -424,13 +504,9 @@ export function Globe() {
         // Defer the reset flyTo so this click handler returns cleanly.
         requestAnimationFrame(() => {
           map.flyTo({
-            center: SYDNEY,
-            zoom: 9.2,
-            pitch: 50,
-            bearing: -12,
+            ...getHomeCamera(map, window.innerWidth, window.innerHeight),
             duration: 1400,
             essential: true,
-            padding: getHomePadding(window.innerWidth, window.innerHeight),
           });
         });
         return null;
@@ -454,23 +530,23 @@ export function Globe() {
     map.on("idle", tryReady);
 
     const bootstrap = () => {
-      const homePadding = getHomePadding(window.innerWidth, window.innerHeight);
-
       if (prefersReducedMotion) {
-        // No animation — just set the padded view immediately.
-        map.setPadding(homePadding);
+        // No animation — jump straight to the proper home view (centroid +
+        // device-appropriate pitch/zoom). cameraForBounds inside getHomeCamera
+        // now works because the map has loaded.
+        map.jumpTo(
+          getHomeCamera(map, window.innerWidth, window.innerHeight, 0),
+        );
       } else {
-        // Cinematic intro: from space → Sydney, padded right of hero copy.
+        // Cinematic intro: from space → centroid of all pins, framed to fit
+        // the full pin cluster within the visible viewport area so the
+        // upcoming rotation never pushes a pin off-screen.
         setTimeout(() => {
           map.flyTo({
-            center: SYDNEY,
-            zoom: 9.2,
-            pitch: 50,
-            bearing: -12,
+            ...getHomeCamera(map, window.innerWidth, window.innerHeight),
             duration: 3200,
             curve: 1.4,
             essential: true,
-            padding: homePadding,
           });
         }, 600);
       }
