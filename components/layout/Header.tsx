@@ -4,11 +4,18 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { BhcLogo } from "@/components/brand/BhcLogo";
 
+// Until the dedicated routes ship, the nav links anchor-scroll to home sections
+// and "Contact" jumps the user straight to their mail client.
+// When /projects, /services, /about ship, swap these back to internal hrefs.
 const NAV_LINKS = [
-  { href: "/projects", label: "Projects" },
-  { href: "/services", label: "Services" },
-  { href: "/about", label: "About" },
-  { href: "/contact", label: "Contact" },
+  { href: "/#selected-work-heading", label: "Projects", external: false },
+  { href: "/#services-heading", label: "Services", external: false },
+  { href: "/#team-heading", label: "About", external: false },
+  {
+    href: "mailto:brendon@brendonhill.co",
+    label: "Contact",
+    external: true,
+  },
 ];
 
 export function Header() {
@@ -39,30 +46,40 @@ export function Header() {
         </Link>
 
         <nav className="hidden md:flex items-center gap-8">
-          {NAV_LINKS.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="text-sm text-fg-secondary hover:text-fg-primary transition-colors"
-            >
-              {link.label}
-            </Link>
-          ))}
-          <Link
-            href="/contact"
+          {NAV_LINKS.map((link) =>
+            link.external ? (
+              <a
+                key={link.href}
+                href={link.href}
+                className="text-sm text-fg-secondary hover:text-fg-primary transition-colors"
+              >
+                {link.label}
+              </a>
+            ) : (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="text-sm text-fg-secondary hover:text-fg-primary transition-colors"
+              >
+                {link.label}
+              </Link>
+            ),
+          )}
+          <a
+            href="mailto:brendon@brendonhill.co?subject=Book%20a%2015-minute%20call"
             className="text-sm font-semibold px-4 py-2 rounded-full border border-[color:var(--border-strong)] hover:border-[color:var(--accent)] hover:text-[color:var(--accent)] transition-colors"
           >
             Book a call
-          </Link>
+          </a>
         </nav>
 
         {/* Mobile: just CTA */}
-        <Link
-          href="/contact"
+        <a
+          href="mailto:brendon@brendonhill.co?subject=Book%20a%2015-minute%20call"
           className="md:hidden text-xs font-semibold px-3 py-1.5 rounded-full border border-[color:var(--border-strong)]"
         >
           Book a call
-        </Link>
+        </a>
       </div>
     </header>
   );

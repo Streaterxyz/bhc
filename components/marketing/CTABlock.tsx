@@ -50,8 +50,8 @@ export function CTABlock() {
           </p>
 
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
-            <Link
-              href="/contact"
+            <a
+              href="mailto:brendon@brendonhill.co?subject=Book%20a%2015-minute%20call"
               className="group inline-flex items-center justify-between gap-6 bg-white text-black font-semibold text-base px-7 py-4 rounded-full hover:bg-[color:var(--accent)] transition-colors"
             >
               <span>Book your free 15-minute call</span>
@@ -61,7 +61,7 @@ export function CTABlock() {
               >
                 →
               </span>
-            </Link>
+            </a>
 
             <a
               href="mailto:brendon@brendonhill.co"

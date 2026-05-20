@@ -92,6 +92,17 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Smooth scroll for in-page anchor navigation (Header/Footer nav links).
+   Headings are offset by the fixed header height so they don't sit under
+   the nav bar after scrolling. */
+html {
+  scroll-behavior: smooth;
+}
+:target,
+[id] {
+  scroll-margin-top: 96px;
+}
+
 /* Hide focus rings for mouse users, show for keyboard */
 :focus:not(:focus-visible) {
   outline: none;

@@ -1,11 +1,17 @@
 import Link from "next/link";
 import { BhcLogo } from "@/components/brand/BhcLogo";
 
+// Same temporary routing as Header — anchor scrolls until the dedicated
+// pages ship, then swap back to internal routes.
 const NAV_LINKS = [
-  { href: "/projects", label: "Projects" },
-  { href: "/services", label: "Services" },
-  { href: "/about", label: "About" },
-  { href: "/contact", label: "Contact" },
+  { href: "/#selected-work-heading", label: "Projects", external: false },
+  { href: "/#services-heading", label: "Services", external: false },
+  { href: "/#team-heading", label: "About", external: false },
+  {
+    href: "mailto:brendon@brendonhill.co",
+    label: "Contact",
+    external: true,
+  },
 ];
 
 const LEGAL_LINKS = [
@@ -65,12 +71,21 @@ export function Footer() {
             <ul className="space-y-3">
               {NAV_LINKS.map((link) => (
                 <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="text-fg-secondary hover:text-[color:var(--accent)] transition-colors text-sm"
-                  >
-                    {link.label}
-                  </Link>
+                  {link.external ? (
+                    <a
+                      href={link.href}
+                      className="text-fg-secondary hover:text-[color:var(--accent)] transition-colors text-sm"
+                    >
+                      {link.label}
+                    </a>
+                  ) : (
+                    <Link
+                      href={link.href}
+                      className="text-fg-secondary hover:text-[color:var(--accent)] transition-colors text-sm"
+                    >
+                      {link.label}
+                    </Link>
+                  )}
                 </li>
               ))}
             </ul>
