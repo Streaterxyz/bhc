@@ -15,14 +15,22 @@ const SYDNEY: LngLatLike = [151.21, -33.87];
 /**
  * Camera padding for the "home" view. On desktop we push the focal point right
  * so the pin cluster doesn't sit behind the hero copy on the left.
- * `padding` works by shrinking the perceived viewport — left padding of N px
- * tells MapLibre to centre the `center` coord in the area to the right of N,
- * which visually shifts the map content to the right.
+ * On mobile we push the focal point upward via bottom padding so the pin
+ * cluster sits above the hero text rather than behind it.
+ *
+ * `padding` works by shrinking the perceived viewport — padding of N px on a
+ * side tells MapLibre to centre the `center` coord in the area minus N px on
+ * that side, which visually shifts the map content away from that side.
  */
-function getHomePadding(width: number) {
-  if (width >= 1280) return { left: Math.round(width * 0.4), top: 0, right: 0, bottom: 0 };
-  if (width >= 1024) return { left: Math.round(width * 0.32), top: 0, right: 0, bottom: 0 };
-  return { left: 0, top: 0, right: 0, bottom: 0 };
+function getHomePadding(width: number, height: number) {
+  if (width >= 1280) {
+    return { left: Math.round(width * 0.4), top: 0, right: 0, bottom: 0 };
+  }
+  if (width >= 1024) {
+    return { left: Math.round(width * 0.32), top: 0, right: 0, bottom: 0 };
+  }
+  // Mobile / tablet: shift focal point up so pins clear the hero copy below.
+  return { left: 0, top: 0, right: 0, bottom: Math.round(height * 0.5) };
 }
 
 /**
@@ -185,7 +193,7 @@ export function Globe() {
       bearing: -12,
       duration: 1400,
       essential: true,
-      padding: getHomePadding(window.innerWidth),
+      padding: getHomePadding(window.innerWidth, window.innerHeight),
     });
   }, []);
 
@@ -422,7 +430,7 @@ export function Globe() {
             bearing: -12,
             duration: 1400,
             essential: true,
-            padding: getHomePadding(window.innerWidth),
+            padding: getHomePadding(window.innerWidth, window.innerHeight),
           });
         });
         return null;
@@ -446,7 +454,7 @@ export function Globe() {
     map.on("idle", tryReady);
 
     const bootstrap = () => {
-      const homePadding = getHomePadding(window.innerWidth);
+      const homePadding = getHomePadding(window.innerWidth, window.innerHeight);
 
       if (prefersReducedMotion) {
         // No animation — just set the padded view immediately.
