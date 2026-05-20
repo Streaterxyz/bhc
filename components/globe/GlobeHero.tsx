@@ -23,19 +23,26 @@ export function GlobeHero() {
     <section className="relative w-full h-[100dvh] overflow-hidden bg-black">
       <Globe />
 
-      {/* Overlaid hero copy */}
+      {/* Overlaid hero copy.
+          Outer wrapper is pointer-events-none so map gestures and pin clicks
+          pass through the empty area around the text. The inner motion.div
+          enables pointer-events + touch-action: pan-y on mobile only — that
+          lets users flick-scroll past the hero from over the copy block while
+          leaving the upper map area free for pan/pinch/pin-tap gestures.
+          From md (>=768px) up, the touch-action override is dropped so the
+          map remains fully interactive across the whole hero on desktop. */}
       <div className="pointer-events-none absolute inset-0 z-20 flex flex-col justify-end p-6 lg:p-12 pb-24 lg:pb-32">
         <div className="max-w-[1440px] mx-auto w-full">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1, ease: [0.16, 1, 0.3, 1], delay: 0.3 }}
-            className="max-w-3xl"
+            className="max-w-3xl pointer-events-auto md:pointer-events-none touch-pan-y md:touch-auto"
           >
             <div className="eyebrow mb-5">
               Hospitality Consulting · Embedded · Accountable
             </div>
-            <h1 className="display text-fg-primary">
+            <h1 className="display-hero text-fg-primary">
               Your Head Office.
               <br />
               <span className="text-[color:var(--accent)]">

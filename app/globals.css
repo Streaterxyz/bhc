@@ -137,6 +137,21 @@ html {
   letter-spacing: -0.02em;
 }
 
+/* Hero-only display variant: ~40% smaller floor on mobile so the headline
+   doesn't dominate the viewport on phones, while keeping the desktop
+   scale identical. Tablet (>=768px) and up matches .display exactly. */
+.display-hero {
+  font-weight: 800;
+  font-size: clamp(1.8rem, 7.5vw, 6.5rem);
+  line-height: 0.95;
+  letter-spacing: -0.02em;
+}
+@media (min-width: 768px) {
+  .display-hero {
+    font-size: clamp(3rem, 8vw, 6.5rem);
+  }
+}
+
 .headline {
   font-weight: 800;
   font-size: clamp(2.25rem, 4.5vw, 3.5rem);

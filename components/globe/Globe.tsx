@@ -644,9 +644,11 @@ export function Globe() {
         </div>
       )}
 
-      {/* Hint */}
+      {/* Hint — desktop / tablet only. On mobile the pulsing pins are
+          intuitive enough and this would clash with the scroll cue + zoom
+          controls in the cramped bottom band. */}
       {ready && !selected && (
-        <div className="pointer-events-none absolute bottom-10 left-6 lg:left-12 z-20 text-fg-tertiary text-xs tracking-widest uppercase opacity-70">
+        <div className="pointer-events-none hidden md:block absolute bottom-10 left-6 lg:left-12 z-20 text-fg-tertiary text-xs tracking-widest uppercase opacity-70">
           Click a pin to explore a project
         </div>
       )}
@@ -661,9 +663,12 @@ export function Globe() {
         </button>
       )}
 
-      {/* Zoom controls — bottom right, away from hero copy + scroll cue */}
+      {/* Zoom controls — bottom right, away from hero copy + scroll cue.
+          Hidden on mobile (<md): mobile users get pinch-to-zoom which is
+          reliable, and showing the +/- pills clutters the cramped bottom
+          band on phones. */}
       {ready && (
-        <div className="absolute bottom-10 right-6 lg:right-12 z-20 flex flex-col gap-1.5">
+        <div className="hidden md:flex absolute bottom-10 right-6 lg:right-12 z-20 flex-col gap-1.5">
           <button
             onClick={() => zoomBy(1)}
             aria-label="Zoom in"
