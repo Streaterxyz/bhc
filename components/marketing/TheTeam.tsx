@@ -1,11 +1,14 @@
 "use client";
 
+import Image from "next/image";
 import { motion } from "framer-motion";
 
 type Member = {
   initials: string;
   name: string;
   role: string;
+  /** Square headshot (1080×1080 from /public/headshots). */
+  photo: string;
 };
 
 const TEAM: Member[] = [
@@ -13,21 +16,25 @@ const TEAM: Member[] = [
     initials: "BH",
     name: "Brendon Hill",
     role: "Managing Director",
+    photo: "/headshots/Brendon.png",
   },
   {
     initials: "MF",
     name: "Mansour Flaihan",
     role: "Hospitality Projects & Operations",
+    photo: "/headshots/Mansour.png",
   },
   {
     initials: "BZ",
     name: "Bayley Zeiher",
     role: "Head of Training & Strategy Development",
+    photo: "/headshots/Bayley.png",
   },
   {
     initials: "DV",
     name: "Daniel Vardareff",
     role: "Commercial Analyst & Data Solutions",
+    photo: "/headshots/Dan.png",
   },
 ];
 
@@ -82,7 +89,8 @@ export function TheTeam() {
             >
               <div className="absolute top-0 left-0 h-px w-0 bg-[color:var(--accent)] group-hover:w-full transition-all duration-700 ease-out z-10" />
 
-              {/* Portrait placeholder — square with monogram. Swap to <Image> when headshots arrive. */}
+              {/* Portrait — real headshot. Monogram backdrop stays as a fallback
+                  underlay until the image paints, keeping the layout stable. */}
               <div
                 className="relative aspect-square overflow-hidden"
                 style={{
@@ -90,18 +98,30 @@ export function TheTeam() {
                     "radial-gradient(at 30% 30%, rgba(244,194,28,0.10), transparent 55%), linear-gradient(140deg, #1a1a1a 0%, #050505 70%)",
                 }}
               >
+                {/* Monogram backdrop (visible until the photo loads) */}
                 <div className="absolute inset-0 flex items-center justify-center">
                   <span
                     aria-hidden
-                    className="text-6xl lg:text-7xl font-extrabold tracking-tight text-fg-muted/30 select-none transition-colors duration-500 group-hover:text-[color:var(--accent)]/40"
+                    className="text-6xl lg:text-7xl font-extrabold tracking-tight text-fg-muted/30 select-none"
                   >
                     {member.initials}
                   </span>
                 </div>
-                {/* Subtle noise overlay for texture */}
+
+                {/* Headshot */}
+                <Image
+                  src={member.photo}
+                  alt={`${member.name} — ${member.role}`}
+                  fill
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                  className="object-cover object-center grayscale group-hover:grayscale-0 transition-all duration-700 ease-out"
+                  priority={i < 2}
+                />
+
+                {/* Subtle noise overlay for texture (over the photo) */}
                 <div
                   aria-hidden
-                  className="absolute inset-0 opacity-[0.06] mix-blend-overlay"
+                  className="pointer-events-none absolute inset-0 opacity-[0.06] mix-blend-overlay"
                   style={{
                     backgroundImage:
                       "repeating-linear-gradient(0deg, rgba(255,255,255,0.4) 0 1px, transparent 1px 3px)",
@@ -110,7 +130,7 @@ export function TheTeam() {
                 {/* Bottom fade for caption legibility */}
                 <div
                   aria-hidden
-                  className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-bg-base to-transparent"
+                  className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-bg-base to-transparent"
                 />
               </div>
 
