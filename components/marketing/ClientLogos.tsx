@@ -16,7 +16,6 @@ const CLIENTS: ClientLogo[] = [
   { name: "The Grounds of Alexandria", src: "/clients/grounds-of-alexandria.png" },
   { name: "Sonnel Group", src: "/clients/sonnel-group.png" },
   { name: "Sydney Restaurant Group", src: "/clients/sydney-restaurant-group.png" },
-  { name: "Ovolo Group", src: "/clients/ovolo-group.png" },
   { name: "The Orchard", src: "/clients/the-orchard.png" },
   { name: "Four Pillars Gin", src: "/clients/four-pillars-gin.png" },
   { name: "Employees Only Sydney", src: "/clients/employees-only-sydney.png" },
@@ -27,6 +26,10 @@ const CLIENTS: ClientLogo[] = [
   { name: "Gella Frenda", src: "/clients/gella-frenda.png" },
   { name: "Belance", src: "/clients/belance.png" },
   { name: "Goliath Coffee Roasters", src: "/clients/goliath-coffee.png" },
+  // { name: "Ovolo Group", src: "/clients/ovolo-group.png" },
+  //   Held out — supplied PNG contains zero visible content (0 non-white pixels).
+  //   Restore this line once a non-empty Ovolo Group export is dropped into
+  //   public/clients/ovolo-group.png.
 ];
 
 export function ClientLogos() {
