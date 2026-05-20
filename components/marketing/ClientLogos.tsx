@@ -26,6 +26,7 @@ const CLIENTS: ClientLogo[] = [
   { name: "Gella Frenda", src: "/clients/gella-frenda.png" },
   { name: "Belance", src: "/clients/belance.png" },
   { name: "Goliath Coffee Roasters", src: "/clients/goliath-coffee.png" },
+  { name: "Cabravale Club Resort", src: "/clients/cabravale-club-resort.png" },
   // { name: "Ovolo Group", src: "/clients/ovolo-group.png" },
   //   Held out — supplied PNG contains zero visible content (0 non-white pixels).
   //   Restore this line once a non-empty Ovolo Group export is dropped into
