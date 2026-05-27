@@ -21,11 +21,11 @@ const LEGAL_LINKS = [
 
 const SOCIAL_LINKS = [
   {
-    href: "https://www.linkedin.com/in/brendon-hill/",
+    href: "https://www.linkedin.com/in/brendon-james-hill-55578366/",
     label: "LinkedIn",
   },
   {
-    href: "https://www.instagram.com/brendonhill_co/",
+    href: "https://www.instagram.com/brendonhillconsulting/",
     label: "Instagram",
   },
 ];
