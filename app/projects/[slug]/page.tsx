@@ -7,6 +7,7 @@ import { Footer } from "@/components/layout/Footer";
 import { CTABlock } from "@/components/marketing/CTABlock";
 import { ProjectCard } from "@/components/projects/ProjectCard";
 import { MetricTile } from "@/components/projects/MetricTile";
+import { PillarTile } from "@/components/projects/PillarTile";
 import {
   projects,
   getProjectBySlug,
@@ -115,6 +116,18 @@ export default async function ProjectPage({
               </h1>
 
               <p className="body-lg mt-6 max-w-2xl">{project.headline}</p>
+
+              {project.website && (
+                <Link
+                  href={project.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 mt-8 text-xs tracking-[0.18em] uppercase text-fg-tertiary hover:text-[color:var(--accent)] transition-colors"
+                >
+                  <span>Visit website</span>
+                  <span aria-hidden>→</span>
+                </Link>
+              )}
             </div>
           </div>
         </section>
@@ -186,12 +199,20 @@ export default async function ProjectPage({
             </h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-[color:var(--border-subtle)] border border-[color:var(--border-subtle)]">
-              {project.metrics.map((m, i) => (
+              {project.pillars?.map((p, i) => (
+                <PillarTile
+                  key={p.title}
+                  title={p.title}
+                  body={p.body}
+                  index={i}
+                />
+              ))}
+              {project.metrics?.map((m, i) => (
                 <MetricTile
                   key={m.label}
                   label={m.label}
                   value={m.value}
-                  index={i}
+                  index={i + (project.pillars?.length ?? 0)}
                 />
               ))}
             </div>

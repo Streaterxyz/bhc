@@ -80,22 +80,41 @@ export function ProjectPanel({ project, onClose }: Props) {
               </p>
             </div>
 
-            {/* Metrics */}
-            <div className="grid grid-cols-3 gap-3 mb-8">
-              {project.metrics.map((m) => (
-                <div
-                  key={m.label}
-                  className="border border-[color:var(--border-subtle)] rounded-lg p-3 bg-black/40"
-                >
-                  <div className="text-xl font-extrabold text-[color:var(--accent)] leading-none mb-2">
-                    {m.value}
+            {/* Result tiles — numeric metrics if present, otherwise pillar
+                titles. Both formats render in the same compact 3-up grid. */}
+            {project.metrics?.length ? (
+              <div className="grid grid-cols-3 gap-3 mb-8">
+                {project.metrics.map((m) => (
+                  <div
+                    key={m.label}
+                    className="border border-[color:var(--border-subtle)] rounded-lg p-3 bg-black/40"
+                  >
+                    <div className="text-xl font-extrabold text-[color:var(--accent)] leading-none mb-2">
+                      {m.value}
+                    </div>
+                    <div className="text-[0.65rem] tracking-wider uppercase text-fg-tertiary leading-tight">
+                      {m.label}
+                    </div>
                   </div>
-                  <div className="text-[0.65rem] tracking-wider uppercase text-fg-tertiary leading-tight">
-                    {m.label}
+                ))}
+              </div>
+            ) : project.pillars?.length ? (
+              <div className="grid grid-cols-3 gap-3 mb-8">
+                {project.pillars.map((p, i) => (
+                  <div
+                    key={p.title}
+                    className="border border-[color:var(--border-subtle)] rounded-lg p-3 bg-black/40"
+                  >
+                    <div className="text-[0.6rem] tracking-[0.18em] uppercase text-[color:var(--accent)] font-semibold mb-2">
+                      {String(i + 1).padStart(2, "0")}
+                    </div>
+                    <div className="text-xs font-semibold text-fg-primary leading-snug">
+                      {p.title}
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : null}
 
             {/* Services */}
             <div className="mb-10">

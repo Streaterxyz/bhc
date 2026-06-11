@@ -104,8 +104,9 @@ export function ProjectCard({ project, aspect = "tall", index = 0 }: Props) {
               {project.headline}
             </p>
 
-            {/* Top metric */}
-            {project.metrics[0] && (
+            {/* Top stat — numeric metric if present, else lead pillar title.
+                Falls back to nothing when neither is supplied. */}
+            {project.metrics?.[0] ? (
               <div className="flex items-baseline gap-3 pt-4 border-t border-white/10">
                 <span className="text-2xl lg:text-3xl font-extrabold text-[color:var(--accent)] leading-none">
                   {project.metrics[0].value}
@@ -114,7 +115,16 @@ export function ProjectCard({ project, aspect = "tall", index = 0 }: Props) {
                   {project.metrics[0].label}
                 </span>
               </div>
-            )}
+            ) : project.pillars?.[0] ? (
+              <div className="flex items-baseline gap-3 pt-4 border-t border-white/10">
+                <span className="text-[0.65rem] tracking-[0.16em] uppercase text-[color:var(--accent)] font-semibold">
+                  01
+                </span>
+                <span className="text-sm lg:text-base font-semibold text-fg-primary leading-snug">
+                  {project.pillars[0].title}
+                </span>
+              </div>
+            ) : null}
           </div>
         </div>
       </Link>
