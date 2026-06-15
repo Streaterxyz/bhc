@@ -8,6 +8,7 @@ import { HowWeWork } from "@/components/marketing/HowWeWork";
 import { SelectedWork } from "@/components/marketing/SelectedWork";
 import { WhyBHC } from "@/components/marketing/WhyBHC";
 import { Testimonials } from "@/components/marketing/Testimonials";
+import { TrainingCTA } from "@/components/marketing/TrainingCTA";
 import { TheTeam } from "@/components/marketing/TheTeam";
 import { CTABlock } from "@/components/marketing/CTABlock";
 
@@ -24,6 +25,7 @@ export default function Home() {
         <SelectedWork />
         <WhyBHC />
         <Testimonials />
+        <TrainingCTA />
         <TheTeam />
         <CTABlock />
       </main>

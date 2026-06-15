@@ -1,0 +1,151 @@
+"use client";
+
+/**
+ * Email capture form for /training. On success it POSTs to /api/leads
+ * (which sets the session cookie server-side) then calls router.refresh()
+ * so the server component re-renders /training in its authenticated state.
+ *
+ * Captures UTM params from the current URL so paid-traffic attribution
+ * flows through to the leads table.
+ */
+
+import { useState, type FormEvent } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { motion } from "framer-motion";
+
+const UTM_KEYS = [
+  "utm_source",
+  "utm_medium",
+  "utm_campaign",
+  "utm_content",
+  "utm_term",
+] as const;
+
+export function LeadCaptureForm() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
+  const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
+  const [error, setError] = useState<string | null>(null);
+
+  async function onSubmit(e: FormEvent) {
+    e.preventDefault();
+    setStatus("loading");
+    setError(null);
+
+    const utm: Record<string, string> = {};
+    for (const key of UTM_KEYS) {
+      const v = searchParams.get(key);
+      if (v) utm[key] = v;
+    }
+
+    try {
+      const res = await fetch("/api/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          name: name || undefined,
+          source: "training",
+          utm,
+          landingPage:
+            typeof window !== "undefined" ? window.location.pathname : null,
+          referrer:
+            typeof document !== "undefined" ? document.referrer || null : null,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.ok) {
+        setStatus("error");
+        setError(data.error ?? "Something went wrong. Please try again.");
+        return;
+      }
+
+      // Cookie is set server-side; re-render the page into its
+      // authenticated (video) state.
+      router.refresh();
+    } catch {
+      setStatus("error");
+      setError("Network error. Please check your connection and try again.");
+    }
+  }
+
+  return (
+    <motion.form
+      onSubmit={onSubmit}
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+      className="w-full max-w-md"
+      noValidate
+    >
+      <div className="space-y-3">
+        <div>
+          <label htmlFor="name" className="sr-only">
+            First name (optional)
+          </label>
+          <input
+            id="name"
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="First name (optional)"
+            autoComplete="given-name"
+            className="w-full px-5 py-4 rounded-xl bg-bg-elevated border border-[color:var(--border-default)] text-fg-primary placeholder:text-fg-muted focus:outline-none focus:border-[color:var(--accent)] transition-colors"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="email" className="sr-only">
+            Email address
+          </label>
+          <input
+            id="email"
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@email.com"
+            autoComplete="email"
+            aria-invalid={status === "error"}
+            className="w-full px-5 py-4 rounded-xl bg-bg-elevated border border-[color:var(--border-default)] text-fg-primary placeholder:text-fg-muted focus:outline-none focus:border-[color:var(--accent)] transition-colors"
+          />
+        </div>
+      </div>
+
+      {error && (
+        <p role="alert" className="mt-3 text-sm text-[#ff6b5e]">
+          {error}
+        </p>
+      )}
+
+      <button
+        type="submit"
+        disabled={status === "loading"}
+        className="group mt-5 w-full inline-flex items-center justify-center gap-3 bg-white text-black font-semibold text-base px-7 py-4 rounded-full hover:bg-[color:var(--accent)] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+      >
+        {status === "loading" ? (
+          <span>Unlocking…</span>
+        ) : (
+          <>
+            <span>Watch the free training</span>
+            <span
+              aria-hidden
+              className="transition-transform group-hover:translate-x-1"
+            >
+              →
+            </span>
+          </>
+        )}
+      </button>
+
+      <p className="mt-4 text-xs text-fg-muted text-center">
+        No spam. Unsubscribe anytime. Your email unlocks instant access.
+      </p>
+    </motion.form>
+  );
+}
