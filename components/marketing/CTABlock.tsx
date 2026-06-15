@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { motion } from "framer-motion";
+import { BookCallButton } from "@/components/calendly/BookCallButton";
 
 export function CTABlock() {
   return (
@@ -50,10 +50,7 @@ export function CTABlock() {
           </p>
 
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
-            <a
-              href="mailto:brendon@brendonhill.co?subject=Book%20a%2015-minute%20call"
-              className="group inline-flex items-center justify-between gap-6 bg-white text-black font-semibold text-base px-7 py-4 rounded-full hover:bg-[color:var(--accent)] transition-colors"
-            >
+            <BookCallButton variant="primary">
               <span>Book your free 15-minute call</span>
               <span
                 aria-hidden
@@ -61,7 +58,7 @@ export function CTABlock() {
               >
                 →
               </span>
-            </a>
+            </BookCallButton>
 
             <a
               href="mailto:brendon@brendonhill.co"
