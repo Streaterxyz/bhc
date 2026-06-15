@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
 
 import { Header } from "@/components/layout/Header";
@@ -15,6 +16,7 @@ import {
   SERVICE_LABELS,
   TYPE_LABELS,
 } from "@/lib/projects";
+import { getHeroImage, getGalleryImages } from "@/lib/projectImages";
 
 export function generateStaticParams() {
   return projects.map((p) => ({ slug: p.slug }));
@@ -49,6 +51,8 @@ export default async function ProjectPage({
   if (!project) notFound();
 
   const related = getRelatedProjects(slug, 3);
+  const heroImage = await getHeroImage(slug);
+  const galleryImages = await getGalleryImages(slug);
 
   return (
     <>
@@ -59,27 +63,39 @@ export default async function ProjectPage({
           aria-labelledby="project-name"
           className="relative h-[80vh] min-h-[560px] lg:min-h-[680px] overflow-hidden bg-black"
         >
-          {/* Placeholder cinematic hero. Swap for <Image src={project.hero_image} fill /> when available. */}
+          {heroImage ? (
+            <Image
+              src={heroImage}
+              alt={`${project.name} — ${TYPE_LABELS[project.type]} in ${project.suburb}`}
+              fill
+              priority
+              sizes="100vw"
+              className="object-cover"
+            />
+          ) : (
+            // Placeholder gradient when no hero photo has been supplied yet.
+            <div
+              aria-hidden
+              className="absolute inset-0"
+              style={{
+                backgroundImage:
+                  "radial-gradient(at 25% 30%, rgba(244,194,28,0.10), transparent 55%), radial-gradient(at 75% 80%, rgba(255,255,255,0.04), transparent 55%), linear-gradient(140deg, #1a1a1a 0%, #050505 60%, #111 100%)",
+              }}
+            />
+          )}
+          {/* Faint scanline grain — adds editorial texture over the photo */}
           <div
             aria-hidden
-            className="absolute inset-0"
-            style={{
-              backgroundImage:
-                "radial-gradient(at 25% 30%, rgba(244,194,28,0.10), transparent 55%), radial-gradient(at 75% 80%, rgba(255,255,255,0.04), transparent 55%), linear-gradient(140deg, #1a1a1a 0%, #050505 60%, #111 100%)",
-            }}
-          />
-          <div
-            aria-hidden
-            className="absolute inset-0 opacity-[0.18] mix-blend-overlay"
+            className="absolute inset-0 opacity-[0.10] mix-blend-overlay pointer-events-none"
             style={{
               backgroundImage:
                 "repeating-linear-gradient(0deg, rgba(255,255,255,0.04) 0 1px, transparent 1px 3px)",
             }}
           />
-          {/* Dark gradient for legibility */}
+          {/* Dark gradient for title + meta legibility */}
           <div
             aria-hidden
-            className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-black/60"
+            className="absolute inset-0 bg-gradient-to-t from-black via-black/55 to-black/35 pointer-events-none"
           />
 
           {/* Top: back link */}
@@ -238,6 +254,45 @@ export default async function ProjectPage({
             </ul>
           </div>
         </section>
+
+        {/* ────────────────── Gallery (optional) ────────────────── */}
+        {galleryImages.length > 0 && (
+          <section
+            aria-label="Project gallery"
+            className="bg-black px-6 lg:px-12 py-20 lg:py-28 border-t border-[color:var(--border-subtle)]"
+          >
+            <div className="max-w-[1440px] mx-auto lg:pl-12">
+              <p className="eyebrow mb-5">Inside The Venue</p>
+              <h3 className="text-2xl lg:text-3xl font-extrabold tracking-tight mb-10 lg:mb-14">
+                A look at the engagement.
+              </h3>
+              <div
+                className={`grid gap-3 lg:gap-4 ${
+                  galleryImages.length === 1
+                    ? "grid-cols-1"
+                    : galleryImages.length === 2
+                      ? "grid-cols-1 md:grid-cols-2"
+                      : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+                }`}
+              >
+                {galleryImages.map((src, i) => (
+                  <div
+                    key={src}
+                    className="relative aspect-[4/3] overflow-hidden bg-bg-elevated"
+                  >
+                    <Image
+                      src={src}
+                      alt={`${project.name} — photo ${i + 1}`}
+                      fill
+                      sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                      className="object-cover hover:scale-[1.03] transition-transform duration-700 ease-out"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* ────────────────── Testimonial (optional) ────────────────── */}
         {project.testimonial && (

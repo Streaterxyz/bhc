@@ -1,6 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
+import Image from "next/image";
 import Link from "next/link";
 import {
   type Project,
@@ -27,27 +28,47 @@ export function ProjectPanel({ project, onClose }: Props) {
           transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
           className="fixed top-0 right-0 bottom-0 z-[60] w-full sm:w-[440px] lg:w-[480px] bg-[color:var(--bg-elevated)]/95 backdrop-blur-xl border-l border-[color:var(--border-subtle)] overflow-y-auto"
         >
-          <div className="p-8 lg:p-10 pt-24">
-            <button
-              onClick={onClose}
-              aria-label="Close project panel"
-              className="absolute top-5 right-5 z-[61] w-10 h-10 flex items-center justify-center rounded-full border border-[color:var(--border-default)] text-fg-tertiary hover:text-fg-primary hover:border-[color:var(--border-strong)] bg-black/40 backdrop-blur-sm transition-colors"
+          <button
+            onClick={onClose}
+            aria-label="Close project panel"
+            className="absolute top-5 right-5 z-[62] w-10 h-10 flex items-center justify-center rounded-full border border-[color:var(--border-default)] text-fg-tertiary hover:text-fg-primary hover:border-[color:var(--border-strong)] bg-black/40 backdrop-blur-sm transition-colors"
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 14 14"
+              fill="none"
+              aria-hidden
             >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 14 14"
-                fill="none"
-                aria-hidden
-              >
-                <path
-                  d="M1 1L13 13M13 1L1 13"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                />
-              </svg>
-            </button>
+              <path
+                d="M1 1L13 13M13 1L1 13"
+                stroke="currentColor"
+                strokeWidth="1.5"
+              />
+            </svg>
+          </button>
 
+          {/* Hero banner — 16:9 thumbnail at the top of the panel. All 8
+              projects ship a hero.webp; if a future project doesn't, the
+              <Image> simply renders broken alt-text on a dark background,
+              which is acceptable graceful degradation. */}
+          <div className="relative aspect-[16/9] bg-bg-base overflow-hidden border-b border-[color:var(--border-subtle)]">
+            <Image
+              src={`/projects/${project.slug}/hero.webp`}
+              alt={`${project.name} — ${TYPE_LABELS[project.type]} in ${project.suburb}`}
+              fill
+              sizes="480px"
+              className="object-cover"
+            />
+            {/* Soft dark gradient at the bottom of the banner — helps the
+                eyebrow row underneath feel anchored to the photo. */}
+            <div
+              aria-hidden
+              className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-[color:var(--bg-elevated)] to-transparent"
+            />
+          </div>
+
+          <div className="p-8 lg:p-10">
             <div className="flex items-center gap-3 mb-6">
               <span className="text-xs tracking-widest uppercase text-[color:var(--accent)]">
                 {TYPE_LABELS[project.type]}

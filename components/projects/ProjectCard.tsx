@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { type Project, TYPE_LABELS } from "@/lib/projects";
@@ -40,29 +41,21 @@ export function ProjectCard({ project, aspect = "tall", index = 0 }: Props) {
             aspect === "tall" ? "aspect-[4/5]" : "aspect-[5/4]"
           }`}
         >
-          {/* Placeholder hero image. Swap to <Image> when project photography is available. */}
-          <div
-            className="absolute inset-0 bg-gradient-to-br from-[#1c1c1c] via-[#0a0a0a] to-[#222] transition-transform duration-[1200ms] ease-out group-hover:scale-[1.04]"
-            style={{
-              backgroundImage:
-                "radial-gradient(at 30% 25%, rgba(244,194,28,0.08), transparent 55%), radial-gradient(at 75% 80%, rgba(255,255,255,0.04), transparent 60%)",
-            }}
-            aria-hidden
+          {/* Hero photo. All 8 projects have hero.webp at this path; falls
+              back to a darker base if Next.js can't resolve it (e.g. during
+              a partial deploy when assets haven't synced). */}
+          <Image
+            src={`/projects/${project.slug}/hero.webp`}
+            alt={`${project.name} — ${TYPE_LABELS[project.type]} in ${project.suburb}`}
+            fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            className="object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-[1.04]"
           />
 
-          {/* Faint grain via mixed gradient — adds texture without an image */}
+          {/* Bottom darkening for text contrast — stronger than before so
+              the overlay copy reads on any photo. */}
           <div
-            className="absolute inset-0 opacity-[0.18] mix-blend-overlay"
-            style={{
-              backgroundImage:
-                "repeating-linear-gradient(0deg, rgba(255,255,255,0.04) 0 1px, transparent 1px 3px)",
-            }}
-            aria-hidden
-          />
-
-          {/* Bottom darkening for text contrast */}
-          <div
-            className="absolute inset-x-0 bottom-0 h-3/5 bg-gradient-to-t from-black via-black/70 to-transparent"
+            className="absolute inset-x-0 bottom-0 h-3/4 bg-gradient-to-t from-black via-black/75 to-transparent"
             aria-hidden
           />
 
