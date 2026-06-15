@@ -10,22 +10,23 @@ type ClientLogo = {
   blurb?: string;
 };
 
-// Real client logos sourced from the BHC capability statement client list.
-// All logos are supplied as white-on-transparent PNGs designed for dark
-// backgrounds. Blurbs sourced from Brendon's Nov 2024 partner-brand notes —
-// only added to brands where Brendon explicitly supplied copy. The rest
-// (Sydney Restaurant Group, Four Pillars Gin, Olsen Palmer, Belance, Goliath,
-// and case-study clients like The Grounds / Sonnel / Cabravale that already
-// have full project pages) render as logo-only.
+// Real client logos sourced from the BHC capability statement + Brendon's
+// Nov 2024 partner-brand notes. All logos are supplied as white-on-transparent
+// PNGs designed for dark backgrounds. Blurbs only added where Brendon
+// supplied copy — case-study clients (The Grounds, Sonnel, Cabravale, SRG)
+// render logo-only because their deeper story lives at /projects/<slug>.
+//
+// 18 entries → renders cleanly as 3 rows of 6 on desktop (lg:grid-cols-6).
 const CLIENTS: ClientLogo[] = [
   { name: "The Grounds of Alexandria", src: "/clients/grounds-of-alexandria.png" },
   { name: "Sonnel Group", src: "/clients/sonnel-group.png" },
   { name: "Sydney Restaurant Group", src: "/clients/sydney-restaurant-group.png" },
+  { name: "Cabravale Club Resort", src: "/clients/cabravale-club-resort.png" },
   {
     name: "The Orchard",
     src: "/clients/the-orchard.png",
     blurb:
-      "Concept, development, Greenfield, pre-opening, training, people and culture.",
+      "Concept and venue development, pre-opening, training and culture-building.",
   },
   { name: "Four Pillars Gin", src: "/clients/four-pillars-gin.png" },
   {
@@ -41,14 +42,24 @@ const CLIENTS: ClientLogo[] = [
   {
     name: "Ole Lynggaard",
     src: "/clients/ole-lynggaard.png",
-    blurb: "Preferred beverage supplier for luxury events.",
+    blurb: "Preferred beverage partner for luxury brand activations.",
+  },
+  {
+    name: "Bang & Olufsen",
+    src: "/clients/bang-and-olufson.png",
+    blurb: "Preferred beverage partner for luxury brand events.",
+  },
+  {
+    name: "BMW",
+    src: "/clients/bmw.png",
+    blurb: "Preferred beverage partner and luxury event specialist.",
   },
   { name: "Olsen Palmer", src: "/clients/olsen-palmer.png" },
   {
     name: "El Patron",
     src: "/clients/el-patron.png",
     blurb:
-      "Operational mentorship and leadership, beverage consultancy and internal audit partner.",
+      "Operational mentorship, leadership development, beverage consultancy and internal audit.",
   },
   {
     name: "Gella Frenda",
@@ -56,14 +67,30 @@ const CLIENTS: ClientLogo[] = [
     blurb:
       "Pre-opening, OS&E, training, concept development and post-opening support.",
   },
+  {
+    name: "Drink West",
+    src: "/clients/drink-west.png",
+    blurb:
+      "End-to-end advisory: capital raise, go-to-market, commercial strategy and product development.",
+  },
+  {
+    name: "Cali Burgers",
+    src: "/clients/cali-burgers.png",
+    blurb: "Creative beverage program development for a QSR brand.",
+  },
+  {
+    name: "The Flower Shop Penrith",
+    src: "/clients/the-flower-shop-penrith.png",
+    blurb:
+      "Full-spectrum partnership across strategy, operations, brand and experience.",
+  },
   { name: "Belance", src: "/clients/belance.png" },
-  { name: "Goliath Coffee Roasters", src: "/clients/goliath-coffee.png" },
-  { name: "Cabravale Club Resort", src: "/clients/cabravale-club-resort.png" },
+  // Held out — supplied PNGs contain zero visible content. Restore once
+  // non-empty exports land in public/clients/.
   // { name: "Ovolo Group", src: "/clients/ovolo-group.png" },
-  //   Held out — supplied PNG contains zero visible content (0 non-white pixels).
-  //   Restore this line once a non-empty Ovolo Group export is dropped into
-  //   public/clients/ovolo-group.png. Brendon's blurb on file:
-  //   "Training and brand support."
+  //   blurb: "Training and brand support."
+  // { name: "Summersalt (SRG)", src: "/clients/summersalt.png" },
+  //   blurb: "Beverage program, OS&E, training and opening support."
 ];
 
 export function ClientLogos() {
@@ -89,7 +116,7 @@ export function ClientLogos() {
         </motion.div>
 
         {/* Logo grid */}
-        <ul className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-px bg-[color:var(--border-subtle)] border border-[color:var(--border-subtle)]">
+        <ul className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-px bg-[color:var(--border-subtle)] border border-[color:var(--border-subtle)]">
           {CLIENTS.map((client, i) => (
             <motion.li
               key={client.name}
