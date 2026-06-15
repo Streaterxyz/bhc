@@ -16,6 +16,8 @@
 
 import { motion } from "framer-motion";
 
+import { TrainingVideo } from "./TrainingVideo";
+
 type Props = {
   firstName?: string | null;
 };
@@ -38,32 +40,14 @@ export function TrainingExperience({ firstName }: Props) {
         </p>
       </motion.div>
 
-      {/* Video frame — placeholder until Cloudflare Stream (Phase 2B). */}
+      {/* Video — env-gated Cloudflare Stream player. Falls back to the
+          cinematic placeholder until NEXT_PUBLIC_STREAM_VIDEO_ID is set. */}
       <motion.div
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
-        className="relative aspect-video w-full rounded-2xl overflow-hidden border border-[color:var(--border-strong)] bg-black"
       >
-        {/* Placeholder cinematic backdrop */}
-        <div
-          aria-hidden
-          className="absolute inset-0"
-          style={{
-            backgroundImage:
-              "radial-gradient(at 50% 40%, rgba(244,194,28,0.12), transparent 60%), linear-gradient(150deg, #161616 0%, #050505 70%)",
-          }}
-        />
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
-          <div className="w-20 h-20 rounded-full border border-[color:var(--border-strong)] bg-black/40 backdrop-blur-sm flex items-center justify-center">
-            <svg width="22" height="26" viewBox="0 0 22 26" fill="none" aria-hidden>
-              <path d="M21 13L0.75 25.124L0.75 0.876L21 13Z" fill="currentColor" className="text-[color:var(--accent)]" />
-            </svg>
-          </div>
-          <p className="text-xs tracking-[0.2em] uppercase text-fg-tertiary">
-            Training video — coming online shortly
-          </p>
-        </div>
+        <TrainingVideo />
       </motion.div>
 
       {/* ── Upsell card — placeholder until Stripe (Phase 2B) ── */}
