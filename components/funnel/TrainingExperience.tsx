@@ -17,12 +17,19 @@
 import { motion } from "framer-motion";
 
 import { TrainingVideo } from "./TrainingVideo";
+import { BuyToolkitButton } from "./BuyToolkitButton";
 
 type Props = {
   firstName?: string | null;
+  checkoutEnabled?: boolean;
+  purchased?: boolean;
 };
 
-export function TrainingExperience({ firstName }: Props) {
+export function TrainingExperience({
+  firstName,
+  checkoutEnabled = false,
+  purchased = false,
+}: Props) {
   return (
     <div className="w-full max-w-5xl mx-auto">
       <motion.div
@@ -95,27 +102,39 @@ export function TrainingExperience({ firstName }: Props) {
           </div>
 
           <div className="lg:text-right">
-            <div className="flex items-baseline gap-2 lg:justify-end mb-1">
-              <span className="text-5xl font-extrabold tracking-tight">
-                $89
-              </span>
-              <span className="text-sm text-fg-tertiary">AUD</span>
-            </div>
-            <p className="text-xs text-fg-muted mb-6">
-              One-time · 14-day money-back guarantee
-            </p>
-            <button
-              type="button"
-              disabled
-              className="w-full lg:w-auto inline-flex items-center justify-center gap-3 bg-white text-black font-semibold text-base px-8 py-4 rounded-full opacity-70 cursor-not-allowed"
-              title="Checkout coming soon"
-            >
-              <span>Get the toolkit</span>
-              <span aria-hidden>→</span>
-            </button>
-            <p className="mt-3 text-[0.7rem] tracking-[0.15em] uppercase text-fg-muted">
-              Checkout opening soon
-            </p>
+            {purchased ? (
+              // Post-purchase confirmation state.
+              <div className="lg:text-right">
+                <div className="inline-flex items-center gap-2 text-[color:var(--accent)] font-semibold mb-2 lg:justify-end">
+                  <span aria-hidden>✓</span>
+                  <span>You own this</span>
+                </div>
+                <p className="text-sm text-fg-secondary mb-6 max-w-xs lg:ml-auto">
+                  Your toolkit is ready. Check your email for the download
+                  link, or head to your downloads.
+                </p>
+                <a
+                  href="/downloads"
+                  className="w-full lg:w-auto inline-flex items-center justify-center gap-3 bg-white text-black font-semibold text-base px-8 py-4 rounded-full hover:bg-[color:var(--accent)] transition-colors"
+                >
+                  <span>Go to downloads</span>
+                  <span aria-hidden>→</span>
+                </a>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-baseline gap-2 lg:justify-end mb-1">
+                  <span className="text-5xl font-extrabold tracking-tight">
+                    $89
+                  </span>
+                  <span className="text-sm text-fg-tertiary">AUD</span>
+                </div>
+                <p className="text-xs text-fg-muted mb-6">
+                  One-time · 14-day money-back guarantee
+                </p>
+                <BuyToolkitButton enabled={checkoutEnabled} />
+              </>
+            )}
           </div>
         </div>
       </motion.div>

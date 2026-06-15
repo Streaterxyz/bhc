@@ -17,6 +17,7 @@ const NAV_LINKS = [
 const LEGAL_LINKS = [
   { href: "/legal/privacy", label: "Privacy" },
   { href: "/legal/terms", label: "Terms" },
+  { href: "/legal/refund-policy", label: "Refunds" },
 ];
 
 const SOCIAL_LINKS = [

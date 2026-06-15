@@ -7,6 +7,8 @@ import { LeadCaptureForm } from "@/components/funnel/LeadCaptureForm";
 import { TrainingExperience } from "@/components/funnel/TrainingExperience";
 import { readLeadSession } from "@/lib/auth/cookie";
 import { getLeadById } from "@/lib/leads";
+import { hasActivePurchase } from "@/lib/purchases";
+import { isCheckoutConfigured } from "@/lib/stripe/client";
 
 export const metadata: Metadata = {
   title: "Free Training — BHC",
@@ -18,10 +20,24 @@ export const metadata: Metadata = {
 // Reads cookies → must render dynamically per request.
 export const dynamic = "force-dynamic";
 
-export default async function TrainingPage() {
+export default async function TrainingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ purchase?: string }>;
+}) {
   const session = await readLeadSession();
   const lead = session ? await getLeadById(session.leadId) : null;
   const authed = Boolean(lead);
+
+  const { purchase } = await searchParams;
+  // Source of truth is a paid row in the DB. We also treat a fresh
+  // ?purchase=success redirect from Stripe as optimistically purchased,
+  // since the webhook may land a beat after the user is redirected back.
+  const purchased =
+    authed && lead
+      ? (await hasActivePurchase(lead.id)) || purchase === "success"
+      : false;
+  const checkoutEnabled = isCheckoutConfigured();
 
   return (
     <div className="min-h-screen flex flex-col bg-bg-base">
@@ -34,7 +50,11 @@ export default async function TrainingPage() {
 
       <main className="flex-1 flex items-center justify-center px-6 lg:px-12 py-12 lg:py-20">
         {authed ? (
-          <TrainingExperience firstName={lead?.name ?? null} />
+          <TrainingExperience
+            firstName={lead?.name ?? null}
+            checkoutEnabled={checkoutEnabled}
+            purchased={purchased}
+          />
         ) : (
           <GatedView />
         )}
