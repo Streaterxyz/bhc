@@ -92,9 +92,14 @@ export function LeadCaptureForm() {
 
       if (!res.ok || !data.ok) {
         setStatus("error");
-        setError(data.error ?? "Something went wrong. Please try again.");
-        // Token is single-use — reset so a retry gets a fresh one.
-        turnstileRef.current?.reset();
+        // Surface the Turnstile reason inline when present so the real cause
+        // is visible (instead of a re-fired challenge masking it).
+        const tsCodes = (data.turnstile as string[] | undefined)?.join(", ");
+        setError(
+          tsCodes
+            ? `Verification failed (${tsCodes}).`
+            : (data.error ?? "Something went wrong. Please try again."),
+        );
         setTurnstileToken(null);
         return;
       }
@@ -111,7 +116,6 @@ export function LeadCaptureForm() {
     } catch {
       setStatus("error");
       setError("Network error. Please check your connection and try again.");
-      turnstileRef.current?.reset();
       setTurnstileToken(null);
     }
   }
