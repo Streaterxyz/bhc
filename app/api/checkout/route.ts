@@ -75,23 +75,30 @@ export async function POST(req: Request) {
       .returning();
 
     // 2. Create the Stripe Checkout Session.
+    // Prefer the dashboard Price (STRIPE_PRICE_ID) so price/copy can be
+    // edited in Stripe without a deploy. Fall back to an inline price only
+    // if no Price ID is configured (e.g. a quick local test).
+    const priceId = process.env.STRIPE_PRICE_ID;
+    const lineItem: import("stripe").Stripe.Checkout.SessionCreateParams.LineItem =
+      priceId
+        ? { quantity: 1, price: priceId }
+        : {
+            quantity: 1,
+            price_data: {
+              currency: TOOLKIT_PRODUCT.currency,
+              unit_amount: TOOLKIT_PRODUCT.amountCents,
+              product_data: {
+                name: TOOLKIT_PRODUCT.name,
+                description: TOOLKIT_PRODUCT.description,
+              },
+            },
+          };
+
     const checkout = await stripe.checkout.sessions.create({
       mode: "payment",
       customer_email: lead.email,
       client_reference_id: lead.id,
-      line_items: [
-        {
-          quantity: 1,
-          price_data: {
-            currency: TOOLKIT_PRODUCT.currency,
-            unit_amount: TOOLKIT_PRODUCT.amountCents,
-            product_data: {
-              name: TOOLKIT_PRODUCT.name,
-              description: TOOLKIT_PRODUCT.description,
-            },
-          },
-        },
-      ],
+      line_items: [lineItem],
       metadata: {
         purchaseId: purchase.id,
         leadId: lead.id,
