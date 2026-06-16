@@ -32,7 +32,9 @@ export type TurnstileResult = {
 export async function verifyTurnstile(
   token: string | null | undefined,
 ): Promise<TurnstileResult> {
-  const secret = process.env.TURNSTILE_SECRET_KEY;
+  // Trim defensively — a stray space/newline on paste is a common cause of
+  // invalid-input-secret.
+  const secret = process.env.TURNSTILE_SECRET_KEY?.trim();
   if (!secret) return { success: true }; // not configured → skip
 
   if (!token) {
@@ -42,7 +44,7 @@ export async function verifyTurnstile(
   try {
     const form = new URLSearchParams();
     form.append("secret", secret);
-    form.append("response", token);
+    form.append("response", token.trim());
 
     const res = await fetch(SITEVERIFY_URL, {
       method: "POST",
