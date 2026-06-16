@@ -14,35 +14,57 @@ export function isTurnstileEnabled(): boolean {
   return Boolean(process.env.TURNSTILE_SECRET_KEY);
 }
 
+export type TurnstileResult = {
+  success: boolean;
+  /** Cloudflare error-codes when success is false (for diagnostics). */
+  errorCodes?: string[];
+};
+
 /**
- * Verify a Turnstile token. Returns true when the token is valid, or when
- * Turnstile isn't configured (verification disabled). `remoteIp` is optional
- * but improves accuracy.
+ * Verify a Turnstile token. Returns `{ success: true }` when valid, or when
+ * Turnstile isn't configured (verification disabled).
+ *
+ * NOTE: we deliberately DO NOT send `remoteip`. The app is DNS-only on
+ * Cloudflare (grey cloud), so the IP Vercel sees can differ from the IP
+ * Cloudflare recorded at challenge time — sending a mismatched remoteip
+ * causes false verification failures.
  */
 export async function verifyTurnstile(
   token: string | null | undefined,
-  remoteIp?: string | null,
-): Promise<boolean> {
+): Promise<TurnstileResult> {
   const secret = process.env.TURNSTILE_SECRET_KEY;
-  if (!secret) return true; // not configured → skip
+  if (!secret) return { success: true }; // not configured → skip
 
-  if (!token) return false;
+  if (!token) {
+    return { success: false, errorCodes: ["missing-input-response"] };
+  }
 
   try {
     const form = new URLSearchParams();
     form.append("secret", secret);
     form.append("response", token);
-    if (remoteIp) form.append("remoteip", remoteIp);
 
     const res = await fetch(SITEVERIFY_URL, {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: form,
     });
-    const data = (await res.json()) as { success?: boolean };
-    return Boolean(data.success);
+    const data = (await res.json()) as {
+      success?: boolean;
+      "error-codes"?: string[];
+    };
+    if (!data.success) {
+      console.warn(
+        "[turnstile] verification failed:",
+        data["error-codes"]?.join(", ") ?? "unknown",
+      );
+    }
+    return {
+      success: Boolean(data.success),
+      errorCodes: data["error-codes"],
+    };
   } catch (err) {
     console.error("[turnstile] verification request failed:", err);
-    return false;
+    return { success: false, errorCodes: ["internal-error"] };
   }
 }

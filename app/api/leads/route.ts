@@ -51,18 +51,17 @@ export async function POST(req: NextRequest) {
   }
 
   // Bot gate — verify the Turnstile token before any DB write. No-op when
-  // Turnstile isn't configured (local dev). Real IP improves accuracy.
-  const remoteIp =
-    req.headers.get("cf-connecting-ip") ??
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    null;
-  const humanVerified = await verifyTurnstile(
-    asString(body.turnstileToken),
-    remoteIp,
-  );
-  if (!humanVerified) {
+  // Turnstile isn't configured (local dev).
+  const verification = await verifyTurnstile(asString(body.turnstileToken));
+  if (!verification.success) {
     return NextResponse.json(
-      { ok: false, error: "Verification failed. Please try again." },
+      {
+        ok: false,
+        error: "Verification failed. Please try again.",
+        // Surfaced for debugging — Cloudflare's reason (e.g.
+        // invalid-input-secret, timeout-or-duplicate). Safe to expose.
+        turnstile: verification.errorCodes,
+      },
       { status: 403 },
     );
   }
