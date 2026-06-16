@@ -97,6 +97,32 @@ export async function POST(req: Request) {
         break;
       }
 
+      case "payment_intent.succeeded": {
+        // Custom /checkout flow (Payment Element). The pending purchase was
+        // stamped with purchaseId in metadata when the intent was created.
+        const pi = event.data.object as Stripe.PaymentIntent;
+        const purchaseId = pi.metadata?.purchaseId;
+        const customerId =
+          typeof pi.customer === "string"
+            ? pi.customer
+            : (pi.customer?.id ?? null);
+
+        const whereClause = purchaseId
+          ? eq(purchases.id, purchaseId)
+          : eq(purchases.stripePaymentIntentId, pi.id);
+
+        await db
+          .update(purchases)
+          .set({
+            status: "paid",
+            paidAt: new Date(),
+            stripePaymentIntentId: pi.id,
+            stripeCustomerId: customerId,
+          })
+          .where(whereClause);
+        break;
+      }
+
       case "charge.refunded": {
         const charge = event.data.object as Stripe.Charge;
         const paymentIntentId =
