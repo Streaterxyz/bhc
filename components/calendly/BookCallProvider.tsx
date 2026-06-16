@@ -22,6 +22,7 @@ import {
 } from "react";
 
 import { BookCallModal } from "./BookCallModal";
+import { capture, EVENTS } from "@/lib/analytics";
 
 type BookCallCtx = {
   isOpen: boolean;
@@ -34,7 +35,10 @@ const Ctx = createContext<BookCallCtx | null>(null);
 export function BookCallProvider({ children }: { children: ReactNode }) {
   const [isOpen, setOpen] = useState(false);
 
-  const open = useCallback(() => setOpen(true), []);
+  const open = useCallback(() => {
+    capture(EVENTS.BOOK_CALL_OPEN);
+    setOpen(true);
+  }, []);
   const close = useCallback(() => setOpen(false), []);
 
   // Lock the body scroll while the modal is up so the page behind doesn't

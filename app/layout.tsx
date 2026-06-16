@@ -3,6 +3,7 @@ import { Manrope } from "next/font/google";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import "./globals.css";
 import { BookCallProvider } from "@/components/calendly/BookCallProvider";
+import { PostHogProvider } from "@/components/analytics/PostHogProvider";
 
 // Env-gated GA4: only loads when NEXT_PUBLIC_GA_ID is set, so local dev /
 // preview builds stay analytics-free unless explicitly configured.
@@ -54,7 +55,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${manrope.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-bg-base text-fg-primary">
-        <BookCallProvider>{children}</BookCallProvider>
+        <PostHogProvider>
+          <BookCallProvider>{children}</BookCallProvider>
+        </PostHogProvider>
       </body>
       {GA_ID ? <GoogleAnalytics gaId={GA_ID} /> : null}
     </html>

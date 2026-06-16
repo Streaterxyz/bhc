@@ -21,6 +21,17 @@
 import { useCallback, useRef } from "react";
 import { Stream, type StreamPlayerApi } from "@cloudflare/stream-react";
 
+import { capture, EVENTS } from "@/lib/analytics";
+
+// Maps our DB milestone keys to PostHog event names.
+const PH_EVENT: Record<string, (typeof EVENTS)[keyof typeof EVENTS]> = {
+  play: EVENTS.VIDEO_PLAY,
+  progress_25: EVENTS.VIDEO_25,
+  progress_50: EVENTS.VIDEO_50,
+  progress_75: EVENTS.VIDEO_75,
+  complete: EVENTS.VIDEO_COMPLETE,
+};
+
 const VIDEO_ID = process.env.NEXT_PUBLIC_STREAM_VIDEO_ID;
 const CUSTOMER_CODE = process.env.NEXT_PUBLIC_STREAM_CUSTOMER_CODE;
 
@@ -37,8 +48,8 @@ type EventPayload = {
 };
 
 function sendEvent(payload: EventPayload) {
-  // Fire-and-forget. keepalive lets the request survive a tab close /
-  // navigation (important for the `complete` and `pause` events).
+  // 1. Durable record → Neon (tied to the lead session, powers our own
+  //    queries). Fire-and-forget; keepalive survives a tab close / nav.
   try {
     fetch("/api/video-events", {
       method: "POST",
@@ -48,6 +59,16 @@ function sendEvent(payload: EventPayload) {
     }).catch(() => {});
   } catch {
     /* never let telemetry break playback */
+  }
+
+  // 2. Product analytics → PostHog (drives the drop-off funnel UI). Only
+  //    the milestone events are mapped; `pause` is DB-only.
+  const phEvent = PH_EVENT[payload.eventType];
+  if (phEvent) {
+    capture(phEvent, {
+      watched_seconds: payload.watchedSeconds,
+      duration_seconds: payload.durationSeconds,
+    });
   }
 }
 

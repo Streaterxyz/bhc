@@ -8,6 +8,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 
 import { projects, type Project } from "@/lib/projects";
 import { ProjectPanel } from "./ProjectPanel";
+import { capture, EVENTS } from "@/lib/analytics";
 
 // Sydney centre — used as a fallback only. The cinematic "home" camera below
 // is now centred on the actual pin centroid so rotation orbits the pin cluster.
@@ -678,6 +679,7 @@ export function Globe() {
         onClick: (info) => {
           const p = info.object as Project | undefined;
           if (p) {
+            capture(EVENTS.PIN_CLICK, { slug: p.slug, name: p.name });
             setSelected(p);
             flyToProject(p);
           }

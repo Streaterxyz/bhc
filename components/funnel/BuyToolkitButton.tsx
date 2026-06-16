@@ -9,6 +9,8 @@
 
 import { useState } from "react";
 
+import { capture, EVENTS } from "@/lib/analytics";
+
 type Props = {
   enabled: boolean;
 };
@@ -20,6 +22,7 @@ export function BuyToolkitButton({ enabled }: Props) {
   async function startCheckout() {
     setLoading(true);
     setError(null);
+    capture(EVENTS.BEGIN_CHECKOUT, { product: "profit-patch-kit-v1", price: 89 });
     try {
       const res = await fetch("/api/checkout", { method: "POST" });
       const data = (await res.json()) as { url?: string; error?: string };

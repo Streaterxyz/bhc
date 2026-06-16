@@ -13,6 +13,8 @@ import { useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 
+import { capture, identifyLead, EVENTS } from "@/lib/analytics";
+
 const UTM_KEYS = [
   "utm_source",
   "utm_medium",
@@ -64,6 +66,12 @@ export function LeadCaptureForm() {
         setError(data.error ?? "Something went wrong. Please try again.");
         return;
       }
+
+      // Tie this person to all subsequent analytics, then record the
+      // conversion. identify creates the PostHog person profile (we use
+      // identified_only profiles).
+      identifyLead(email, { name: name || undefined, ...utm });
+      capture(EVENTS.LEAD_CAPTURED, { source: "training" });
 
       // Cookie is set server-side; re-render the page into its
       // authenticated (video) state.
