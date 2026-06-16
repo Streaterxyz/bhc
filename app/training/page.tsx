@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { BhcLogo } from "@/components/brand/BhcLogo";
 import { LeadCaptureForm } from "@/components/funnel/LeadCaptureForm";
 import { TrainingExperience } from "@/components/funnel/TrainingExperience";
+import { LogoTicker } from "@/components/marketing/LogoTicker";
 import { readLeadSession } from "@/lib/auth/cookie";
 import { getLeadById } from "@/lib/leads";
 import { hasActivePurchase } from "@/lib/purchases";
@@ -48,15 +49,32 @@ export default async function TrainingPage({
         </Link>
       </header>
 
-      <main className="flex-1 flex items-center justify-center px-6 lg:px-12 py-12 lg:py-20">
+      <main className="flex-1 flex flex-col">
         {authed ? (
-          <TrainingExperience
-            firstName={lead?.name ?? null}
-            checkoutEnabled={checkoutEnabled}
-            purchased={purchased}
-          />
+          <div className="flex-1 flex items-center justify-center px-6 lg:px-12 py-12 lg:py-20">
+            <TrainingExperience
+              firstName={lead?.name ?? null}
+              checkoutEnabled={checkoutEnabled}
+              purchased={purchased}
+            />
+          </div>
         ) : (
-          <GatedView />
+          <>
+            <div className="flex-1 flex items-center justify-center px-6 lg:px-12 py-12 lg:py-16">
+              <GatedView />
+            </div>
+
+            {/* Social-proof ticker band — full-bleed marquee below the hero */}
+            <section
+              aria-label="Brands and venues we've worked with"
+              className="border-t border-[color:var(--border-subtle)] py-10 lg:py-12"
+            >
+              <p className="text-center text-[0.7rem] tracking-[0.24em] uppercase text-fg-muted mb-7 px-6">
+                Same strategies. Trusted by iconic venues.
+              </p>
+              <LogoTicker />
+            </section>
+          </>
         )}
       </main>
 
