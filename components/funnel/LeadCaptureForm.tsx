@@ -161,7 +161,7 @@ export function LeadCaptureForm() {
             }}
             onExpire={() => setTurnstileToken(null)}
             onError={() => setTurnstileToken(null)}
-            options={{ theme: "dark", size: "flexible" }}
+            options={{ theme: "dark", retry: "auto" }}
           />
         </div>
       )}
