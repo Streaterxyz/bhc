@@ -191,3 +191,13 @@ html {
   outline: none;
 }
 
+
+/* Cloudflare Stream player — force the component's inline `position:
+   relative` middle <div> to fill our 16:9 wrapper. The @cloudflare/stream-react
+   "responsive" mode only sets position:relative inline (no aspect padding),
+   so without this the iframe fills a 0-height box and collapses to the
+   top-left corner. !important is required to beat the component's inline style. */
+.training-video-frame > div {
+  position: absolute !important;
+  inset: 0 !important;
+}

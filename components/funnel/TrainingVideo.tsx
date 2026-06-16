@@ -125,8 +125,15 @@ export function TrainingVideo() {
   }
 
   // ── Live Cloudflare Stream player ───────────────────────────────────
+  // @cloudflare/stream-react's `responsive` wrapper only sets
+  // `position: relative` (no padding-top aspect hack), and absolutely
+  // positions the iframe inside it — so the height MUST come from this
+  // outer wrapper. We give it the 16:9 ratio via `aspect-video` and force
+  // the Stream component's intermediate <div> to fill it (`[&>div]:absolute
+  // [&>div]:inset-0`). Without that, the middle div sits in normal flow at
+  // 0 height and the player collapses / renders in the corner.
   return (
-    <div className="relative aspect-video w-full rounded-2xl overflow-hidden border border-[color:var(--border-strong)] bg-black">
+    <div className="training-video-frame relative aspect-video w-full overflow-hidden rounded-2xl border border-[color:var(--border-strong)] bg-black">
       <Stream
         controls
         src={VIDEO_ID}
@@ -135,8 +142,7 @@ export function TrainingVideo() {
         onPlay={handlePlay}
         onTimeUpdate={handleTimeUpdate}
         onEnded={handleEnded}
-        className="absolute inset-0 h-full w-full"
-        responsive={false}
+        responsive
       />
     </div>
   );
