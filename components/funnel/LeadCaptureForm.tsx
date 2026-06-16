@@ -9,7 +9,7 @@
  * flows through to the leads table.
  */
 
-import { useState, useRef, type FormEvent } from "react";
+import { useState, useRef, useCallback, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
@@ -17,6 +17,9 @@ import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 import { capture, identifyLead, EVENTS } from "@/lib/analytics";
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+// Module-level constant so the prop identity is STABLE across re-renders —
+// an inline object would re-initialise the widget mid-challenge (→ 600010).
+const TURNSTILE_OPTIONS = { theme: "dark", retry: "auto" } as const;
 
 const UTM_KEYS = [
   "utm_source",
@@ -40,6 +43,14 @@ export function LeadCaptureForm() {
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const turnstileRef = useRef<TurnstileInstance | null>(null);
   const turnstileEnabled = Boolean(TURNSTILE_SITE_KEY);
+
+  // Stable handlers (empty deps) so the widget isn't re-initialised by the
+  // form's re-renders / mount animation — re-init mid-challenge causes 600010.
+  const onTurnstileSuccess = useCallback((token: string) => {
+    setTurnstileToken(token);
+    setStatus((s) => (s === "error" ? "idle" : s));
+  }, []);
+  const onTurnstileClear = useCallback(() => setTurnstileToken(null), []);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -155,13 +166,10 @@ export function LeadCaptureForm() {
           <Turnstile
             ref={turnstileRef}
             siteKey={TURNSTILE_SITE_KEY}
-            onSuccess={(token) => {
-              setTurnstileToken(token);
-              if (status === "error") setStatus("idle");
-            }}
-            onExpire={() => setTurnstileToken(null)}
-            onError={() => setTurnstileToken(null)}
-            options={{ theme: "dark", retry: "auto" }}
+            onSuccess={onTurnstileSuccess}
+            onExpire={onTurnstileClear}
+            onError={onTurnstileClear}
+            options={TURNSTILE_OPTIONS}
           />
         </div>
       )}
