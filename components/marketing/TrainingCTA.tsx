@@ -41,12 +41,15 @@ export function TrainingCTA() {
               id="training-cta-heading"
               className="text-3xl lg:text-5xl font-extrabold tracking-tight leading-[1.05] mb-4"
             >
-              Run a venue that runs without you.
+              Your venue isn&apos;t broken. It&apos;s leaking.
             </h2>
             <p className="body-lg max-w-2xl">
-              A free 30-minute training on the systems, margins and operating
-              rhythm behind Sydney&apos;s best-run venues. No cost, instant
-              access.
+              The hidden profit leaks quietly draining your margins — and the
+              four tools that plug them. See how one venue went from −10% to a{" "}
+              <span className="text-fg-primary font-semibold">
+                $393,600 turnaround
+              </span>
+              .
             </p>
           </div>
 
