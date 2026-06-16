@@ -13,6 +13,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { upsertLead, isValidEmail, normalizeEmail } from "@/lib/leads";
 import { setLeadCookie } from "@/lib/auth/cookie";
+import { verifyTurnstile } from "@/lib/turnstile";
 
 export const runtime = "nodejs";
 
@@ -20,6 +21,7 @@ type Body = {
   email?: unknown;
   name?: unknown;
   source?: unknown;
+  turnstileToken?: unknown;
   utm?: Record<string, string | undefined>;
   landingPage?: unknown;
   referrer?: unknown;
@@ -45,6 +47,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       { ok: false, error: "Please enter a valid email address." },
       { status: 422 },
+    );
+  }
+
+  // Bot gate — verify the Turnstile token before any DB write. No-op when
+  // Turnstile isn't configured (local dev). Real IP improves accuracy.
+  const remoteIp =
+    req.headers.get("cf-connecting-ip") ??
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    null;
+  const humanVerified = await verifyTurnstile(
+    asString(body.turnstileToken),
+    remoteIp,
+  );
+  if (!humanVerified) {
+    return NextResponse.json(
+      { ok: false, error: "Verification failed. Please try again." },
+      { status: 403 },
     );
   }
 

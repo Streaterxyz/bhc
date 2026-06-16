@@ -9,11 +9,14 @@
  * flows through to the leads table.
  */
 
-import { useState, type FormEvent } from "react";
+import { useState, useRef, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
+import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 
 import { capture, identifyLead, EVENTS } from "@/lib/analytics";
+
+const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
 const UTM_KEYS = [
   "utm_source",
@@ -32,8 +35,22 @@ export function LeadCaptureForm() {
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
 
+  // Turnstile token + a handle to reset the widget after a failed attempt
+  // (tokens are single-use).
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileInstance | null>(null);
+  const turnstileEnabled = Boolean(TURNSTILE_SITE_KEY);
+
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
+
+    // Require a Turnstile token when the challenge is enabled.
+    if (turnstileEnabled && !turnstileToken) {
+      setStatus("error");
+      setError("Please complete the verification challenge and try again.");
+      return;
+    }
+
     setStatus("loading");
     setError(null);
 
@@ -51,6 +68,7 @@ export function LeadCaptureForm() {
           email,
           name: name || undefined,
           source: "training",
+          turnstileToken,
           utm,
           landingPage:
             typeof window !== "undefined" ? window.location.pathname : null,
@@ -64,6 +82,9 @@ export function LeadCaptureForm() {
       if (!res.ok || !data.ok) {
         setStatus("error");
         setError(data.error ?? "Something went wrong. Please try again.");
+        // Token is single-use — reset so a retry gets a fresh one.
+        turnstileRef.current?.reset();
+        setTurnstileToken(null);
         return;
       }
 
@@ -79,6 +100,8 @@ export function LeadCaptureForm() {
     } catch {
       setStatus("error");
       setError("Network error. Please check your connection and try again.");
+      turnstileRef.current?.reset();
+      setTurnstileToken(null);
     }
   }
 
@@ -124,6 +147,24 @@ export function LeadCaptureForm() {
           />
         </div>
       </div>
+
+      {/* Turnstile — only renders when the site key is configured. Themed
+          dark to match the form; resets after a failed submit. */}
+      {turnstileEnabled && TURNSTILE_SITE_KEY && (
+        <div className="mt-4">
+          <Turnstile
+            ref={turnstileRef}
+            siteKey={TURNSTILE_SITE_KEY}
+            onSuccess={(token) => {
+              setTurnstileToken(token);
+              if (status === "error") setStatus("idle");
+            }}
+            onExpire={() => setTurnstileToken(null)}
+            onError={() => setTurnstileToken(null)}
+            options={{ theme: "dark", size: "flexible" }}
+          />
+        </div>
+      )}
 
       {error && (
         <p role="alert" className="mt-3 text-sm text-[#ff6b5e]">
