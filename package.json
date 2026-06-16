@@ -19,6 +19,7 @@
     "@deck.gl/layers": "^9.3.2",
     "@deck.gl/mapbox": "^9.3.2",
     "@neondatabase/serverless": "^1.1.0",
+    "@next/third-parties": "^16.2.9",
     "drizzle-orm": "^0.45.2",
     "framer-motion": "^12.38.0",
     "jose": "^6.2.3",

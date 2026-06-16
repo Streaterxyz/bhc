@@ -1,7 +1,12 @@
 import type { Metadata } from "next";
 import { Manrope } from "next/font/google";
+import { GoogleAnalytics } from "@next/third-parties/google";
 import "./globals.css";
 import { BookCallProvider } from "@/components/calendly/BookCallProvider";
+
+// Env-gated GA4: only loads when NEXT_PUBLIC_GA_ID is set, so local dev /
+// preview builds stay analytics-free unless explicitly configured.
+const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
 
 const manrope = Manrope({
   variable: "--font-manrope",
@@ -51,6 +56,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-bg-base text-fg-primary">
         <BookCallProvider>{children}</BookCallProvider>
       </body>
+      {GA_ID ? <GoogleAnalytics gaId={GA_ID} /> : null}
     </html>
   );
 }

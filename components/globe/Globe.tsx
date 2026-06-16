@@ -488,8 +488,10 @@ export function Globe() {
     });
 
     mapRef.current = map;
-    // @ts-expect-error debug-only
-    if (typeof window !== "undefined") window.__bhcMap = map;
+    // debug-only handle on window; cast avoids a global type augmentation.
+    if (typeof window !== "undefined") {
+      (window as unknown as { __bhcMap?: unknown }).__bhcMap = map;
+    }
 
     map.on("error", (e) => {
       console.error("[map error]", e?.error?.message || e);
