@@ -38,10 +38,14 @@ export function isCheckoutConfigured(): boolean {
  * more products later, migrate these to real Stripe Products/Prices.
  */
 export const TOOLKIT_PRODUCT = {
-  id: "templates-zip-v1",
-  name: "The Complete Operator Toolkit",
+  id: "profit-patch-kit-v1",
+  name: "The Profit Patch Kit",
   description:
-    "Every template, spreadsheet and system from the training — costing models, roster frameworks, menu engineering sheets and the operating rhythm. Lifetime access.",
-  amountCents: 8900,
+    "The 4 tools, bonus Silent Upsell System, 15 extra strategies and 1 month of community access from the training. Plug your venue's profit leaks. Lifetime access.",
+  amountCents: 8900, // $89 charged. $149 is a display-only anchor, never charged.
   currency: "aud",
 } as const;
+
+/** Display-only anchor price (in whole dollars). Never charged — used to
+ *  show the founding-member discount. The real charge is amountCents above. */
+export const TOOLKIT_ANCHOR_PRICE = 149;

@@ -51,9 +51,16 @@ function sendEvent(payload: EventPayload) {
   }
 }
 
-export function TrainingVideo() {
+type TrainingVideoProps = {
+  /** Reports max watch fraction (0–1) so the parent can progressively
+   *  reveal the offer (sticky CTA at 30%, emphasis at completion). */
+  onProgress?: (fraction: number) => void;
+};
+
+export function TrainingVideo({ onProgress }: TrainingVideoProps = {}) {
   const playerRef = useRef<StreamPlayerApi | undefined>(undefined);
   const fired = useRef<Set<string>>(new Set());
+  const maxFraction = useRef(0);
 
   const fireOnce = useCallback((key: string, payload: EventPayload) => {
     if (fired.current.has(key)) return;
@@ -74,6 +81,13 @@ export function TrainingVideo() {
     const p = playerRef.current;
     if (!p || !p.duration || !Number.isFinite(p.duration)) return;
     const pct = p.currentTime / p.duration;
+
+    // Report monotonic max progress to the parent for the offer reveal.
+    if (pct > maxFraction.current) {
+      maxFraction.current = pct;
+      onProgress?.(pct);
+    }
+
     const base = {
       watchedSeconds: Math.round(p.currentTime),
       durationSeconds: Math.round(p.duration),
@@ -83,16 +97,18 @@ export function TrainingVideo() {
     if (pct >= 0.5) fireOnce("p50", { eventType: "progress_50", ...base });
     if (pct >= 0.75)
       fireOnce("p75", { eventType: "progress_75", ...base });
-  }, [fireOnce]);
+  }, [fireOnce, onProgress]);
 
   const handleEnded = useCallback(() => {
     const p = playerRef.current;
+    maxFraction.current = 1;
+    onProgress?.(1);
     fireOnce("complete", {
       eventType: "complete",
       watchedSeconds: p?.duration ? Math.round(p.duration) : undefined,
       durationSeconds: p?.duration ? Math.round(p.duration) : undefined,
     });
-  }, [fireOnce]);
+  }, [fireOnce, onProgress]);
 
   // ── Placeholder (no video configured yet) ───────────────────────────
   if (!VIDEO_ID) {

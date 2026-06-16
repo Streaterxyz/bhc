@@ -11,9 +11,9 @@ import { hasActivePurchase } from "@/lib/purchases";
 import { isCheckoutConfigured } from "@/lib/stripe/client";
 
 export const metadata: Metadata = {
-  title: "Free Training — BHC",
+  title: "Free Training — The Profit Patch Kit — BHC",
   description:
-    "A free 30-minute training for hospitality operators ready to lift margin, systemise operations, and build a venue that runs without them.",
+    "Your venue isn't broken — it's leaking. A free 30-minute training revealing the hidden profit leaks draining hospitality margins, and the four tools that plug them.",
   robots: { index: false, follow: false },
 };
 
@@ -70,30 +70,36 @@ export default async function TrainingPage({
   );
 }
 
+const LEAK_HOOKS = [
+  "The labour trap that pushes payroll past 68% — and the roster fix that claws it straight back",
+  "How one venue lost 18 bottles of premium vodka in a single weekend — with zero theft involved",
+  "The “ego menu” mistake quietly killing your margins (and the swap that fixes it)",
+  "The supplier minimum-order trap costing venues thousands a year without anyone noticing",
+  "Why it's your systems — not your demand — that are capping your revenue",
+];
+
 function GatedView() {
   return (
-    <div className="w-full max-w-5xl mx-auto grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+    <div className="w-full max-w-6xl mx-auto grid lg:grid-cols-[1.1fr_0.9fr] gap-12 lg:gap-16 items-center">
       {/* Left: the pitch */}
       <div>
         <p className="eyebrow mb-5">Free 30-Minute Training</p>
         <h1 className="text-4xl lg:text-6xl font-extrabold tracking-tight leading-[1.02] mb-6">
-          Run a venue that
+          Your venue isn&apos;t broken.
           <br />
-          <span className="text-[color:var(--accent)]">
-            runs without you.
-          </span>
+          It&apos;s{" "}
+          <span className="text-[color:var(--accent)]">leaking.</span>
         </h1>
-        <p className="body-lg mb-8 max-w-lg">
-          The systems, margins and operating rhythm behind Sydney&apos;s
-          best-run venues — distilled into 30 minutes. Free, instant access.
+        <p className="body-lg mb-8 max-w-xl">
+          The hidden profit leaks quietly draining your margins — and the four
+          tools that plug them. Watch free, unlock instantly.
         </p>
 
-        <ul className="space-y-3">
-          {[
-            "Why most venues plateau — and the system that breaks through",
-            "The margin levers operators consistently miss",
-            "How to build an operating rhythm that doesn't depend on you",
-          ].map((point) => (
+        <p className="text-xs tracking-[0.18em] uppercase text-fg-muted mb-4">
+          In the next 30 minutes you&apos;ll discover
+        </p>
+        <ul className="space-y-3 mb-10">
+          {LEAK_HOOKS.map((point) => (
             <li key={point} className="flex items-start gap-3 text-fg-secondary">
               <span
                 className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[color:var(--accent)] shrink-0"
@@ -103,20 +109,43 @@ function GatedView() {
             </li>
           ))}
         </ul>
+
+        {/* Proof + founder credibility */}
+        <div className="border-t border-[color:var(--border-subtle)] pt-6 space-y-4 max-w-xl">
+          <p className="text-sm text-fg-secondary">
+            <span className="text-fg-primary font-semibold">
+              The exact systems used across 50+ venues
+            </span>{" "}
+            to bank millions in extra profit — including one that went from{" "}
+            <span className="text-fg-primary font-semibold">
+              −10% profit to a $393,600 turnaround.
+            </span>
+          </p>
+          <p className="text-sm text-fg-tertiary italic">
+            “I built these out of necessity — 80-hour weeks, bleeding cash, not
+            paying myself. There&apos;s a better way, and it starts here.”
+            <span className="not-italic"> — Brendon Hill</span>
+          </p>
+        </div>
       </div>
 
       {/* Right: the capture form */}
-      <div className="lg:pl-6">
-        <div className="rounded-2xl border border-[color:var(--border-subtle)] bg-bg-elevated/40 p-8 lg:p-10">
-          <h2 className="text-xl font-extrabold tracking-tight mb-2">
-            Get instant access
+      <div className="lg:pl-2">
+        <div className="rounded-2xl border border-[color:var(--border-strong)] bg-bg-elevated/60 p-8 lg:p-10">
+          <p className="eyebrow mb-3">Watch Free</p>
+          <h2 className="text-2xl font-extrabold tracking-tight mb-2">
+            Unlock the training
           </h2>
           <p className="text-sm text-fg-tertiary mb-6">
-            Enter your email and the training unlocks immediately.
+            Enter your email and it unlocks immediately. No spam — just the
+            training.
           </p>
           <Suspense fallback={<FormSkeleton />}>
             <LeadCaptureForm />
           </Suspense>
+          <p className="mt-5 text-[0.7rem] tracking-[0.12em] uppercase text-fg-muted text-center">
+            Instant access · 30 minutes · 100% free
+          </p>
         </div>
       </div>
     </div>
