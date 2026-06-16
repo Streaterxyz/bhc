@@ -14,16 +14,15 @@ export const metadata: Metadata = {
   title: "BHC — Brendon Hill Consultancy",
   description:
     "Everything Elevated. No Exceptions. A people-led hospitality consultancy combining strategy, creativity, and experience design.",
-  metadataBase: new URL("https://www.brendonhill.co"),
-  // Soft-launch: keep staging out of search results until V2 goes live.
-  // Flip to { index: true, follow: true } when ready to launch publicly.
+  metadataBase: new URL("https://brendonhill.co"),
+  // Live on brendonhill.co — marketing site is indexable. Funnel pages
+  // (/training, checkout, downloads) keep their own per-page noindex.
   robots: {
-    index: false,
-    follow: false,
-    nocache: true,
+    index: true,
+    follow: true,
     googleBot: {
-      index: false,
-      follow: false,
+      index: true,
+      follow: true,
     },
   },
   // OG and Twitter card images come from app/opengraph-image.tsx and
