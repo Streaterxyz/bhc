@@ -52,7 +52,7 @@ async function sendReceipt(leadId: string | undefined, amountCents: number) {
     const token = await signMagicToken({ leadId: lead.id, email: lead.email });
     const link = `${siteOrigin()}/api/auth/verify?token=${encodeURIComponent(
       token,
-    )}&to=${encodeURIComponent("/downloads")}`;
+    )}&to=${encodeURIComponent("/app")}`;
     const amount = `A$${(amountCents / 100).toFixed(2)}`;
     const { subject, html } = receiptEmail({
       link,

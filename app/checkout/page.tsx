@@ -30,8 +30,8 @@ export default async function CheckoutPage() {
 
   // Must be an identified lead — send them through the training gate first.
   if (!lead) redirect("/training");
-  // Already bought — straight to downloads.
-  if (await hasActivePurchase(lead.id)) redirect("/downloads");
+  // Already bought — straight to their tools.
+  if (await hasActivePurchase(lead.id)) redirect("/app");
 
   const configured = isCheckoutConfigured();
   const returnUrl = `${siteUrl()}/training?purchase=success`;

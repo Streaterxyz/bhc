@@ -389,17 +389,17 @@ function PurchasedBlock() {
         <span>You own the Profit Patch Kit</span>
       </div>
       <h2 className="text-2xl lg:text-3xl font-extrabold tracking-tight mb-3">
-        Your kit is ready.
+        Your tools are ready.
       </h2>
       <p className="text-fg-secondary mb-8 max-w-md mx-auto">
-        Check your email for the download link, or head straight to your
-        downloads to grab everything.
+        Set up your venue and run the leak diagnostic to start plugging the
+        leaks — we&apos;ve emailed you a link to get back in anytime.
       </p>
       <a
-        href="/downloads"
+        href="/app"
         className="inline-flex items-center justify-center gap-3 bg-white text-black font-semibold text-base px-8 py-4 rounded-full hover:bg-[color:var(--accent)] transition-colors"
       >
-        <span>Go to downloads</span>
+        <span>Open your tools</span>
         <span aria-hidden>→</span>
       </a>
     </motion.div>

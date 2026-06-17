@@ -11,7 +11,7 @@ import { motion } from "framer-motion";
 
 export function AccessForm() {
   const searchParams = useSearchParams();
-  const redirectTo = searchParams.get("to") ?? "/downloads";
+  const redirectTo = searchParams.get("to") ?? "/app";
   const expired = searchParams.get("error") === "expired";
 
   const [email, setEmail] = useState("");

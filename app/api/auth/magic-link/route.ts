@@ -46,7 +46,7 @@ export async function POST(req: Request) {
   const redirectTo =
     typeof body.redirectTo === "string" && body.redirectTo.startsWith("/")
       ? body.redirectTo
-      : "/downloads";
+      : "/app";
 
   const email = normalizeEmail(rawEmail);
 

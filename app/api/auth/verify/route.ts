@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
   const token = req.nextUrl.searchParams.get("token");
   const toParam = req.nextUrl.searchParams.get("to");
   // Only honour same-site relative destinations.
-  const dest = toParam && toParam.startsWith("/") ? toParam : "/downloads";
+  const dest = toParam && toParam.startsWith("/") ? toParam : "/app";
 
   const payload = await verifyMagicToken(token);
   if (!payload) {
