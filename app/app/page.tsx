@@ -63,6 +63,9 @@ export default async function AppHome() {
   if (!diagnostic) redirect("/app/diagnostic");
 
   const figures = await getDashboardFigures(session!.leadId);
+  // Supplier is health-only (not a $-tool) — surface its reviewed state.
+  const supplierSnap = await getLatestSnapshot(session!.leadId, "supplier");
+  const supplierScore = supplierSnap?.healthScore ?? null;
 
   const health = diagnostic.healthScore ?? 0;
   const results = (
@@ -179,6 +182,8 @@ export default async function AppHome() {
           const dollarTool = LEAK_TO_DOLLAR_TOOL[r.id];
           const fig = dollarTool ? figures.perTool[dollarTool] : undefined;
           const quantified = fig?.hasData ?? false;
+          const supplierReviewed =
+            r.id === "stock-accountability" && supplierScore !== null;
           // Status label for the right rail.
           const statusLabel = !hasTool
             ? "Coming soon"
@@ -186,7 +191,9 @@ export default async function AppHome() {
               ? fig!.recovered > 0
                 ? "Recovering"
                 : "Quantified"
-              : "Open →";
+              : supplierReviewed
+                ? "Reviewed"
+                : "Open →";
           const Card = (
             <div className="flex items-center justify-between gap-4 rounded-xl border border-[color:var(--border-subtle)] bg-bg-elevated px-5 py-4 transition-colors hover:border-[color:var(--border-strong)]">
               <div className="min-w-0">
@@ -222,6 +229,16 @@ export default async function AppHome() {
                         recovered
                       </span>
                     )}
+                  </p>
+                ) : supplierReviewed ? (
+                  <p className="mt-0.5 text-sm">
+                    <span
+                      className="font-semibold"
+                      style={{ color: supplierScore! >= 75 ? "#1f9d6b" : "#e0900b" }}
+                    >
+                      {supplierScore}/100
+                    </span>{" "}
+                    <span className="text-fg-tertiary">supplier health</span>
                   </p>
                 ) : (
                   <p className="mt-0.5 text-sm text-fg-tertiary">
