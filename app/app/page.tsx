@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 
 import { readLeadSession } from "@/lib/auth/cookie";
 import { getVenueProfile } from "@/lib/venue";
+import { LEAK_BY_ID, type LeakId, type Severity } from "@/lib/tools/diagnostic";
+import { getLatestSnapshot } from "@/lib/tools/snapshots";
 
 export const dynamic = "force-dynamic";
 
@@ -14,17 +16,57 @@ const TYPE_LABELS: Record<string, string> = {
   hotel: "Hotel",
 };
 
+const SEVERITY: Record<Severity, { label: string; color: string; bg: string; rank: number }> = {
+  high: { label: "High", color: "#e0533f", bg: "rgba(224,83,63,0.14)", rank: 0 },
+  medium: { label: "Medium", color: "#e0900b", bg: "rgba(224,144,11,0.14)", rank: 1 },
+  low: { label: "Low", color: "#1f9d6b", bg: "rgba(31,157,107,0.14)", rank: 2 },
+};
+
+function healthColor(score: number): string {
+  if (score >= 75) return "#1f9d6b";
+  if (score >= 50) return "#e0900b";
+  return "#e0533f";
+}
+
+function monthLabel(periodMonth: string): string {
+  const [y, m] = periodMonth.split("-").map(Number);
+  return new Date(y, (m ?? 1) - 1, 1).toLocaleDateString("en-AU", {
+    month: "long",
+    year: "numeric",
+  });
+}
+
+type LeakResult = {
+  id: LeakId;
+  severity: Severity;
+  gapPct: number;
+  yesCount: number;
+  total: number;
+};
+
 export default async function AppHome() {
-  // Entitlement enforced by app/app/layout.tsx.
   const session = await readLeadSession();
   const profile = session ? await getVenueProfile(session.leadId) : null;
-
-  // First-run: no venue yet → onboarding.
   if (!profile) redirect("/app/onboarding");
 
+  const diagnostic = await getLatestSnapshot(session!.leadId, "diagnostic");
+  // Forced front door: no diagnostic yet → run it first.
+  if (!diagnostic) redirect("/app/diagnostic");
+
+  const health = diagnostic.healthScore ?? 0;
+  const results = (
+    (diagnostic.payload as { results?: LeakResult[] } | null)?.results ?? []
+  )
+    .slice()
+    .sort(
+      (a, b) =>
+        SEVERITY[a.severity].rank - SEVERITY[b.severity].rank ||
+        b.gapPct - a.gapPct,
+    );
+
   return (
-    <main className="mx-auto max-w-5xl px-6 py-12 lg:py-16">
-      {/* Welcome */}
+    <main className="mx-auto max-w-5xl px-6 py-10 lg:py-14">
+      {/* Venue header */}
       <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="mb-2 text-[0.7rem] tracking-[0.22em] uppercase text-fg-muted">
@@ -47,40 +89,105 @@ export default async function AppHome() {
         </Link>
       </div>
 
-      {/* Dashboard placeholder — Phase 3 builds the real counters + leak cards. */}
-      <div className="rounded-2xl border border-[color:var(--border-subtle)] bg-bg-elevated p-8 lg:p-12">
-        <p className="mb-3 text-[0.7rem] tracking-[0.22em] uppercase text-[color:var(--accent)] font-semibold">
-          Your Profit Recovery dashboard
-        </p>
-        <h2 className="mb-4 text-2xl font-extrabold tracking-tight">
-          Your tools are being set up.
-        </h2>
-        <p className="max-w-lg text-fg-secondary">
-          Next, you&apos;ll run the leak diagnostic to personalise your
-          dashboard — then work through the calculators to see exactly how
-          much your venue is leaking, and watch it recovered month over month.
-        </p>
-
-        <div className="mt-8 grid gap-3 sm:grid-cols-2">
-          {[
-            "Top 5 Leaks Diagnostic",
-            "Roster Waste Calculator",
-            "Menu Margin Trap Fixer",
-            "Supplier Cost Leak Detector",
-          ].map((tool) => (
-            <div
-              key={tool}
-              className="flex items-center justify-between rounded-xl border border-[color:var(--border-subtle)] bg-bg-base px-4 py-3.5"
+      {/* Health score + $ recovered (counters land with the calculators) */}
+      <div className="mb-10 grid gap-4 sm:grid-cols-3">
+        <div className="rounded-2xl border border-[color:var(--border-subtle)] bg-bg-elevated p-6">
+          <p className="mb-3 text-[0.7rem] tracking-[0.18em] uppercase text-fg-muted">
+            Venue Health Score
+          </p>
+          <div className="flex items-end gap-1">
+            <span
+              className="text-5xl font-extrabold leading-none tabular-nums"
+              style={{ color: healthColor(health) }}
             >
-              <span className="text-sm font-medium text-fg-secondary">
-                {tool}
-              </span>
-              <span className="text-[0.6rem] tracking-[0.16em] uppercase text-fg-muted">
-                Coming soon
-              </span>
-            </div>
-          ))}
+              {health}
+            </span>
+            <span className="mb-1 text-base text-fg-tertiary">/100</span>
+          </div>
+          <p className="mt-3 text-xs text-fg-muted">
+            Last run {monthLabel(diagnostic.periodMonth)} ·{" "}
+            <Link
+              href="/app/diagnostic"
+              className="text-fg-tertiary underline hover:text-[color:var(--accent)]"
+            >
+              Re-take
+            </Link>
+          </p>
         </div>
+
+        <div className="rounded-2xl border border-[color:var(--border-subtle)] bg-bg-elevated p-6 opacity-70">
+          <p className="mb-3 text-[0.7rem] tracking-[0.18em] uppercase text-fg-muted">
+            $ Recovered
+          </p>
+          <div className="text-5xl font-extrabold leading-none text-fg-tertiary tabular-nums">
+            $0
+          </div>
+          <p className="mt-3 text-xs text-fg-muted">Unlocks with the calculators</p>
+        </div>
+
+        <div className="rounded-2xl border border-[color:var(--border-subtle)] bg-bg-elevated p-6 opacity-70">
+          <p className="mb-3 text-[0.7rem] tracking-[0.18em] uppercase text-fg-muted">
+            $ Identified
+          </p>
+          <div className="text-5xl font-extrabold leading-none text-fg-tertiary tabular-nums">
+            $0
+          </div>
+          <p className="mt-3 text-xs text-fg-muted">Unlocks with the calculators</p>
+        </div>
+      </div>
+
+      {/* Personalised leak cards — worst first */}
+      <div className="mb-5 flex items-baseline justify-between">
+        <h2 className="text-xl font-extrabold tracking-tight">
+          Your leaks, worst first
+        </h2>
+        <span className="text-xs text-fg-muted">
+          from your {monthLabel(diagnostic.periodMonth)} diagnostic
+        </span>
+      </div>
+
+      <div className="grid gap-3">
+        {results.map((r) => {
+          const leak = LEAK_BY_ID[r.id];
+          const sev = SEVERITY[r.severity];
+          const hasTool = Boolean(leak.routesTo.href);
+          const Card = (
+            <div className="flex items-center justify-between gap-4 rounded-xl border border-[color:var(--border-subtle)] bg-bg-elevated px-5 py-4 transition-colors hover:border-[color:var(--border-strong)]">
+              <div className="min-w-0">
+                <div className="mb-1 flex items-center gap-2.5">
+                  <span
+                    className="rounded-full px-2.5 py-0.5 text-[0.65rem] font-semibold"
+                    style={{ color: sev.color, backgroundColor: sev.bg }}
+                  >
+                    {sev.label}
+                  </span>
+                  <span className="text-[0.65rem] tracking-[0.14em] uppercase text-fg-muted">
+                    Leak {leak.number}
+                  </span>
+                </div>
+                <h3 className="truncate text-base font-bold">{leak.title}</h3>
+                <p className="mt-0.5 text-sm text-fg-tertiary">
+                  {r.yesCount}/{r.total} best practices in place
+                </p>
+              </div>
+              <div className="shrink-0 text-right">
+                <span className="text-xs font-medium text-fg-secondary">
+                  {leak.routesTo.label}
+                </span>
+                <div className="text-[0.65rem] uppercase tracking-[0.14em] text-fg-muted">
+                  {hasTool ? "Open →" : "Coming soon"}
+                </div>
+              </div>
+            </div>
+          );
+          return hasTool ? (
+            <Link key={r.id} href={leak.routesTo.href!}>
+              {Card}
+            </Link>
+          ) : (
+            <div key={r.id}>{Card}</div>
+          );
+        })}
       </div>
     </main>
   );
