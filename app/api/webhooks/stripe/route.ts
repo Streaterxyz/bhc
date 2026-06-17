@@ -31,6 +31,7 @@ import { getLeadById } from "@/lib/leads";
 import { signMagicToken } from "@/lib/auth/magic";
 import { sendEmail } from "@/lib/email/resend";
 import { receiptEmail } from "@/lib/email/templates";
+import { loopsUpsertContact, loopsTrackEvent } from "@/lib/loops";
 
 function siteOrigin(): string {
   return (process.env.NEXT_PUBLIC_SITE_URL ?? "https://brendonhill.co").replace(
@@ -61,6 +62,26 @@ async function sendReceipt(leadId: string | undefined, amountCents: number) {
     await sendEmail({ to: lead.email, subject, html });
   } catch (err) {
     console.error("[stripe webhook] receipt email failed:", err);
+  }
+}
+
+/**
+ * Best-effort marketing sync after a paid order. Moves the contact into the
+ * customer lifecycle in Loops (so the sales nurture stops and onboarding can
+ * start). Never throws — Loops being down must not 500 the webhook.
+ */
+async function trackPurchase(leadId: string | undefined, amountCents: number) {
+  if (!leadId) return;
+  try {
+    const lead = await getLeadById(leadId);
+    if (!lead) return;
+    await loopsUpsertContact(lead.email, { lastProduct: TOOLKIT_PRODUCT.id });
+    await loopsTrackEvent(lead.email, "purchased", {
+      product: TOOLKIT_PRODUCT.id,
+      amount: amountCents / 100,
+    });
+  } catch (err) {
+    console.error("[stripe webhook] loops purchase sync failed:", err);
   }
 }
 
@@ -157,8 +178,9 @@ export async function POST(req: Request) {
           })
           .where(whereClause);
 
-        // Receipt + magic access link (best-effort).
+        // Receipt + magic access link, then marketing sync (both best-effort).
         await sendReceipt(pi.metadata?.leadId, pi.amount);
+        await trackPurchase(pi.metadata?.leadId, pi.amount);
         break;
       }
 

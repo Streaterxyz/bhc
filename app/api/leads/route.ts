@@ -14,6 +14,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { upsertLead, isValidEmail, normalizeEmail } from "@/lib/leads";
 import { setLeadCookie } from "@/lib/auth/cookie";
 import { verifyTurnstile } from "@/lib/turnstile";
+import { loopsUpsertContact, loopsTrackEvent } from "@/lib/loops";
 
 export const runtime = "nodejs";
 
@@ -91,6 +92,19 @@ export async function POST(req: NextRequest) {
     });
 
     await setLeadCookie({ leadId: lead.id, email: lead.email });
+
+    // Marketing nurture sync (best-effort — never blocks or fails the
+    // signup). Resend handles transactional mail; Loops branches sequences
+    // off the `signed_up` event + contact properties.
+    await loopsUpsertContact(lead.email, {
+      firstName: lead.name ?? undefined,
+      source: lead.source ?? "training",
+    });
+    await loopsTrackEvent(lead.email, "signed_up", {
+      source: lead.source ?? "training",
+      utmSource: lead.utmSource ?? undefined,
+      utmCampaign: lead.utmCampaign ?? undefined,
+    });
 
     return NextResponse.json({ ok: true, leadId: lead.id });
   } catch (err) {

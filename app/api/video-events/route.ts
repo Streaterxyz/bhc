@@ -15,6 +15,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { db } from "@/lib/db/client";
 import { videoEvents } from "@/lib/db/schema";
 import { readLeadSession, clearLeadCookie } from "@/lib/auth/cookie";
+import { loopsTrackEvent } from "@/lib/loops";
 
 export const runtime = "nodejs";
 
@@ -84,6 +85,13 @@ export async function POST(req: NextRequest) {
       watchedSeconds: asInt(body.watchedSeconds),
       durationSeconds: asInt(body.durationSeconds),
     });
+
+    // Strong buy-signal → let Loops trigger a post-training follow-up
+    // sequence. Best-effort; never affects the telemetry response.
+    if (eventType === "complete") {
+      await loopsTrackEvent(session.email, "completed_training");
+    }
+
     return NextResponse.json({ ok: true });
   } catch (err) {
     // Stale cookie: leadId no longer exists in `leads`. Clear the cookie so
