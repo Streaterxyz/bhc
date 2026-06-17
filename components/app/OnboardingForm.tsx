@@ -9,7 +9,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { VENUE_TYPES } from "@/lib/venue";
+import { VENUE_TYPES } from "@/lib/venue-types";
 
 type InitialProfile = {
   name: string;

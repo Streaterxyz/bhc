@@ -6,9 +6,12 @@
  * across invocations within the same warm function instance.
  *
  * IMPORTANT: only import this from server code (route handlers, server
- * components, server actions). Never from a client component.
+ * components, server actions). Never from a client component — the
+ * "server-only" guard below makes such an import fail at BUILD time
+ * rather than throwing in the browser at runtime.
  */
 
+import "server-only";
 import { Pool, neonConfig } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-serverless";
 import ws from "ws";

@@ -9,14 +9,11 @@ import { eq } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { venueProfiles, type VenueProfile } from "@/lib/db/schema";
 
-export const VENUE_TYPES = [
-  "restaurant",
-  "bar",
-  "cafe",
-  "pub",
-  "hotel",
-] as const;
-export type VenueType = (typeof VENUE_TYPES)[number];
+// Re-export the client-safe constants so existing server imports of
+// `@/lib/venue` keep working. Client components must import these from
+// `@/lib/venue-types` directly to avoid bundling the DB client.
+export { VENUE_TYPES, type VenueType } from "@/lib/venue-types";
+import type { VenueType } from "@/lib/venue-types";
 
 export type VenueInput = {
   name: string;
