@@ -5,6 +5,15 @@ import { readLeadSession } from "@/lib/auth/cookie";
 import { getVenueProfile } from "@/lib/venue";
 import { LEAK_BY_ID, type LeakId, type Severity } from "@/lib/tools/diagnostic";
 import { getLatestSnapshot } from "@/lib/tools/snapshots";
+import { getDashboardFigures } from "@/lib/tools/dashboard";
+import { AnimatedDollar } from "@/components/app/AnimatedDollar";
+import { formatMoney } from "@/lib/tools/roster";
+
+// Which leaks have a $-producing calculator (vs health-only).
+const LEAK_TO_DOLLAR_TOOL: Partial<Record<LeakId, "roster" | "menu">> = {
+  "labour-modelling": "roster",
+  "menu-profitability": "menu",
+};
 
 export const dynamic = "force-dynamic";
 
@@ -52,6 +61,8 @@ export default async function AppHome() {
   const diagnostic = await getLatestSnapshot(session!.leadId, "diagnostic");
   // Forced front door: no diagnostic yet → run it first.
   if (!diagnostic) redirect("/app/diagnostic");
+
+  const figures = await getDashboardFigures(session!.leadId);
 
   const health = diagnostic.healthScore ?? 0;
   const results = (
@@ -115,24 +126,38 @@ export default async function AppHome() {
           </p>
         </div>
 
-        <div className="rounded-2xl border border-[color:var(--border-subtle)] bg-bg-elevated p-6 opacity-70">
+        <div className="rounded-2xl border border-[color:var(--border-subtle)] bg-bg-elevated p-6">
           <p className="mb-3 text-[0.7rem] tracking-[0.18em] uppercase text-fg-muted">
             $ Recovered
           </p>
-          <div className="text-5xl font-extrabold leading-none text-fg-tertiary tabular-nums">
-            $0
+          <div
+            className="text-5xl font-extrabold leading-none tabular-nums"
+            style={{ color: figures.recovered > 0 ? "#1f9d6b" : undefined }}
+          >
+            <AnimatedDollar value={figures.recovered} />
           </div>
-          <p className="mt-3 text-xs text-fg-muted">Unlocks with the calculators</p>
+          <p className="mt-3 text-xs text-fg-muted">
+            {figures.recovered > 0
+              ? "Measured vs your first run"
+              : "Re-run a tool next month to recover"}
+          </p>
         </div>
 
-        <div className="rounded-2xl border border-[color:var(--border-subtle)] bg-bg-elevated p-6 opacity-70">
+        <div className="rounded-2xl border border-[color:var(--border-subtle)] bg-bg-elevated p-6">
           <p className="mb-3 text-[0.7rem] tracking-[0.18em] uppercase text-fg-muted">
             $ Identified
           </p>
-          <div className="text-5xl font-extrabold leading-none text-fg-tertiary tabular-nums">
-            $0
+          <div
+            className="text-5xl font-extrabold leading-none tabular-nums"
+            style={{ color: figures.identified > 0 ? "#e0533f" : undefined }}
+          >
+            <AnimatedDollar value={figures.identified} />
           </div>
-          <p className="mt-3 text-xs text-fg-muted">Unlocks with the calculators</p>
+          <p className="mt-3 text-xs text-fg-muted">
+            {figures.identified > 0
+              ? "Still on the table — go plug it"
+              : "Run the calculators to quantify"}
+          </p>
         </div>
       </div>
 
@@ -151,6 +176,17 @@ export default async function AppHome() {
           const leak = LEAK_BY_ID[r.id];
           const sev = SEVERITY[r.severity];
           const hasTool = Boolean(leak.routesTo.href);
+          const dollarTool = LEAK_TO_DOLLAR_TOOL[r.id];
+          const fig = dollarTool ? figures.perTool[dollarTool] : undefined;
+          const quantified = fig?.hasData ?? false;
+          // Status label for the right rail.
+          const statusLabel = !hasTool
+            ? "Coming soon"
+            : quantified
+              ? fig!.recovered > 0
+                ? "Recovering"
+                : "Quantified"
+              : "Open →";
           const Card = (
             <div className="flex items-center justify-between gap-4 rounded-xl border border-[color:var(--border-subtle)] bg-bg-elevated px-5 py-4 transition-colors hover:border-[color:var(--border-strong)]">
               <div className="min-w-0">
@@ -166,16 +202,39 @@ export default async function AppHome() {
                   </span>
                 </div>
                 <h3 className="truncate text-base font-bold">{leak.title}</h3>
-                <p className="mt-0.5 text-sm text-fg-tertiary">
-                  {r.yesCount}/{r.total} best practices in place
-                </p>
+                {quantified ? (
+                  <p className="mt-0.5 text-sm">
+                    <span
+                      className="font-semibold"
+                      style={{
+                        color: fig!.current > 0 ? "#e0533f" : "#1f9d6b",
+                      }}
+                    >
+                      {formatMoney(Math.max(0, fig!.current))}/yr
+                    </span>{" "}
+                    <span className="text-fg-tertiary">identified</span>
+                    {fig!.recovered > 0 && (
+                      <span className="text-fg-tertiary">
+                        {" · "}
+                        <span className="font-semibold text-[#1f9d6b]">
+                          {formatMoney(fig!.recovered)}
+                        </span>{" "}
+                        recovered
+                      </span>
+                    )}
+                  </p>
+                ) : (
+                  <p className="mt-0.5 text-sm text-fg-tertiary">
+                    {r.yesCount}/{r.total} best practices in place
+                  </p>
+                )}
               </div>
               <div className="shrink-0 text-right">
                 <span className="text-xs font-medium text-fg-secondary">
                   {leak.routesTo.label}
                 </span>
                 <div className="text-[0.65rem] uppercase tracking-[0.14em] text-fg-muted">
-                  {hasTool ? "Open →" : "Coming soon"}
+                  {statusLabel}
                 </div>
               </div>
             </div>
