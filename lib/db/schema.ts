@@ -159,6 +159,75 @@ export const downloads = pgTable(
   ],
 );
 
+// ─── venue_profiles (Tools — Phase 1) ───────────────────────────────
+// One venue per customer (single-venue v1). Captured once at onboarding,
+// then used to pre-fill + personalise every tool. Keyed to the lead (the
+// customer IS the account).
+export const venueProfiles = pgTable(
+  "venue_profiles",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    leadId: uuid("lead_id")
+      .notNull()
+      .references(() => leads.id, { onDelete: "cascade" }),
+
+    name: text("name").notNull(),
+    // restaurant | bar | cafe | pub | hotel
+    type: text("type").notNull(),
+    seatsCapacity: integer("seats_capacity"),
+    avgSpendPerHead: integer("avg_spend_per_head"), // whole dollars
+    targetLabourPct: integer("target_labour_pct").notNull().default(28),
+    tradingDays: integer("trading_days").notNull().default(7),
+
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [uniqueIndex("venue_profiles_lead_uniq").on(t.leadId)],
+);
+
+// ─── tool_snapshots (Tools — Phase 1) ───────────────────────────────
+// One generic, extensible table for every tool's versioned monthly run.
+// `payload` holds tool-specific inputs + computed results; `dollarsIdentified`
+// and `healthScore` are denormalised for fast dashboard aggregation.
+// `lockedAt` null = the editable current-month draft.
+export const toolSnapshots = pgTable(
+  "tool_snapshots",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    leadId: uuid("lead_id")
+      .notNull()
+      .references(() => leads.id, { onDelete: "cascade" }),
+
+    // diagnostic | roster | menu | supplier
+    tool: text("tool").notNull(),
+    periodMonth: varchar("period_month", { length: 7 }).notNull(), // YYYY-MM
+
+    payload: jsonb("payload").notNull().default({}),
+    dollarsIdentified: integer("dollars_identified"), // annualised $; null = health-only
+    healthScore: integer("health_score"), // /100; diagnostic only
+
+    lockedAt: timestamp("locked_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("tool_snapshots_lead_tool_period_uniq").on(
+      t.leadId,
+      t.tool,
+      t.periodMonth,
+    ),
+    index("tool_snapshots_lead_tool_idx").on(t.leadId, t.tool),
+  ],
+);
+
 // ─── Type exports ───────────────────────────────────────────────────
 // Inferred row + insert types — saves manual TypeScript everywhere.
 export type Lead = typeof leads.$inferSelect;
@@ -169,3 +238,7 @@ export type Purchase = typeof purchases.$inferSelect;
 export type NewPurchase = typeof purchases.$inferInsert;
 export type Download = typeof downloads.$inferSelect;
 export type NewDownload = typeof downloads.$inferInsert;
+export type VenueProfile = typeof venueProfiles.$inferSelect;
+export type NewVenueProfile = typeof venueProfiles.$inferInsert;
+export type ToolSnapshot = typeof toolSnapshots.$inferSelect;
+export type NewToolSnapshot = typeof toolSnapshots.$inferInsert;

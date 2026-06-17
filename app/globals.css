@@ -245,3 +245,48 @@ html {
     animation: none;
   }
 }
+
+/* ------------------------------------------------------------------
+   /app tools — light/dark theming.
+   The marketing site is dark-only (:root). The tools workspace is
+   wrapped in .app-root[data-app-theme] which re-defines the same
+   tokens, so every Tailwind colour class (bg-bg-base, text-fg-primary,
+   etc.) inside /app flips with the toggle. Descendants inherit the
+   nearest ancestor's custom properties, so this overrides :root for
+   the /app subtree only.
+   ------------------------------------------------------------------ */
+.app-root[data-app-theme="dark"] {
+  /* Inherits :root, re-asserted for clarity. */
+  --bg-base: #000000;
+  --bg-elevated: #0a0a0a;
+  --bg-subtle: #141414;
+  --bg-overlay: rgba(0, 0, 0, 0.72);
+  --border-subtle: #1f1f1f;
+  --border-default: #2a2a2a;
+  --border-strong: #3a3a3a;
+  --fg-primary: #ffffff;
+  --fg-secondary: #cccccc;
+  --fg-tertiary: #999999;
+  --fg-muted: #666666;
+  --fg-faint: #3a3a3a;
+  --accent: #f4c21c;
+}
+
+.app-root[data-app-theme="light"] {
+  --bg-base: #fbfbfa;
+  --bg-elevated: #ffffff;
+  --bg-subtle: #f1f1ef;
+  --bg-overlay: rgba(255, 255, 255, 0.72);
+  --border-subtle: #ececea;
+  --border-default: #dcdcd8;
+  --border-strong: #c4c4bf;
+  --fg-primary: #0c0c0c;
+  --fg-secondary: #3a3a3a;
+  --fg-tertiary: #6a6a6a;
+  --fg-muted: #9a9a96;
+  --fg-faint: #cacac6;
+  /* Deepen gold for legibility on light surfaces. */
+  --accent: #b8860b;
+  --accent-bright: #d4a017;
+  --accent-dim: #f2e6c2;
+}
