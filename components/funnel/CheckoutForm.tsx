@@ -28,6 +28,18 @@ export function CheckoutForm({ returnUrl }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [expressReady, setExpressReady] = useState(false);
 
+  // Build the post-payment return URL from the live browser origin so it's
+  // always a valid absolute URL — independent of NEXT_PUBLIC_SITE_URL being
+  // set correctly in env. Falls back to the server-passed prop only if
+  // window is somehow unavailable. (Stripe rejects relative/protocol-less
+  // return_urls with "Not a valid URL".)
+  function resolveReturnUrl(): string {
+    if (typeof window !== "undefined" && window.location?.origin) {
+      return `${window.location.origin}/training?purchase=success`;
+    }
+    return returnUrl;
+  }
+
   async function confirm() {
     if (!stripe || !elements) return;
     setSubmitting(true);
@@ -35,7 +47,7 @@ export function CheckoutForm({ returnUrl }: Props) {
 
     const { error: submitError } = await stripe.confirmPayment({
       elements,
-      confirmParams: { return_url: returnUrl },
+      confirmParams: { return_url: resolveReturnUrl() },
     });
 
     // If we get here, confirmation failed (success redirects away).
@@ -67,7 +79,7 @@ export function CheckoutForm({ returnUrl }: Props) {
             setError(null);
             const { error: submitError } = await stripe.confirmPayment({
               elements,
-              confirmParams: { return_url: returnUrl },
+              confirmParams: { return_url: resolveReturnUrl() },
             });
             if (submitError) {
               setError(submitError.message ?? "Payment could not be completed.");
