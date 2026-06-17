@@ -26,7 +26,43 @@ import type Stripe from "stripe";
 import { db } from "@/lib/db/client";
 import { purchases } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
-import { getStripe } from "@/lib/stripe/client";
+import { getStripe, TOOLKIT_PRODUCT } from "@/lib/stripe/client";
+import { getLeadById } from "@/lib/leads";
+import { signMagicToken } from "@/lib/auth/magic";
+import { sendEmail } from "@/lib/email/resend";
+import { receiptEmail } from "@/lib/email/templates";
+
+function siteOrigin(): string {
+  return (process.env.NEXT_PUBLIC_SITE_URL ?? "https://brendonhill.co").replace(
+    /\/$/,
+    "",
+  );
+}
+
+/**
+ * Best-effort receipt + magic access link after a paid order. Never throws —
+ * an email hiccup must not make the webhook 500 and trigger Stripe retries.
+ */
+async function sendReceipt(leadId: string | undefined, amountCents: number) {
+  if (!leadId) return;
+  try {
+    const lead = await getLeadById(leadId);
+    if (!lead) return;
+    const token = await signMagicToken({ leadId: lead.id, email: lead.email });
+    const link = `${siteOrigin()}/api/auth/verify?token=${encodeURIComponent(
+      token,
+    )}&to=${encodeURIComponent("/downloads")}`;
+    const amount = `A$${(amountCents / 100).toFixed(2)}`;
+    const { subject, html } = receiptEmail({
+      link,
+      amount,
+      productName: TOOLKIT_PRODUCT.name,
+    });
+    await sendEmail({ to: lead.email, subject, html });
+  } catch (err) {
+    console.error("[stripe webhook] receipt email failed:", err);
+  }
+}
 
 export const runtime = "nodejs";
 
@@ -120,6 +156,9 @@ export async function POST(req: Request) {
             stripeCustomerId: customerId,
           })
           .where(whereClause);
+
+        // Receipt + magic access link (best-effort).
+        await sendReceipt(pi.metadata?.leadId, pi.amount);
         break;
       }
 

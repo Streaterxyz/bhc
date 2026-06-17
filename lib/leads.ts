@@ -82,3 +82,13 @@ export async function getLeadById(id: string): Promise<Lead | null> {
   const [row] = await db.select().from(leads).where(eq(leads.id, id)).limit(1);
   return row ?? null;
 }
+
+/** Look up a lead by (normalised) email. Used by the magic-link request. */
+export async function getLeadByEmail(email: string): Promise<Lead | null> {
+  const [row] = await db
+    .select()
+    .from(leads)
+    .where(eq(leads.email, normalizeEmail(email)))
+    .limit(1);
+  return row ?? null;
+}
