@@ -50,6 +50,32 @@ export function magicLinkEmail(link: string): { subject: string; html: string } 
   };
 }
 
+/** Monthly "update your numbers" re-engagement nudge. */
+export function monthlyNudgeEmail(args: {
+  link: string;
+  monthLabel: string; // e.g. "March"
+  firstName?: string | null;
+}): { subject: string; html: string } {
+  const { link, monthLabel, firstName } = args;
+  const hi = firstName ? `Hi ${firstName}, ` : "";
+  return {
+    subject: `It's a new month — see what you've recovered`,
+    html: shell(`
+      <h1 style="font-size:22px;font-weight:800;margin:0 0 14px;">${monthLabel} check-in: update your numbers</h1>
+      <p style="font-size:15px;line-height:1.6;color:#444;margin:0 0 22px;">
+        ${hi}two minutes is all it takes. Re-run your Roster Waste and Menu
+        Margin tools with this month's numbers and watch your <strong>$
+        recovered</strong> climb — measured against where you started.
+      </p>
+      <p style="margin:0 0 26px;">${button(link, "Update my tools")}</p>
+      <p style="font-size:13px;line-height:1.6;color:#888;margin:0;">
+        The operators who plug the most leaks are the ones who check in every
+        month. Small, consistent moves compound.
+      </p>
+    `),
+  };
+}
+
 /** Purchase receipt + access email. */
 export function receiptEmail(args: {
   link: string;

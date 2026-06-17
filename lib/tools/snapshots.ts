@@ -9,7 +9,16 @@ import { and, desc, eq } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { toolSnapshots, type ToolSnapshot } from "@/lib/db/schema";
 
-export type ToolKey = "diagnostic" | "roster" | "menu" | "supplier";
+export type ToolKey =
+  | "diagnostic"
+  | "roster"
+  | "menu"
+  | "supplier"
+  | "playbooks";
+
+// Playbooks aren't monthly-versioned — one evolving record per lead under
+// this sentinel period.
+export const PLAYBOOKS_PERIOD = "all";
 
 /** Current period as YYYY-MM in the venue's market timezone (Sydney). */
 export function getCurrentPeriodMonth(): string {

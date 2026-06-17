@@ -35,7 +35,10 @@ export const LEAKS: Leak[] = [
     number: 1,
     title: "Revenue Capping",
     intro: "Are you limiting how much revenue you can generate?",
-    routesTo: { label: "Revenue & capacity playbook", href: null },
+    routesTo: {
+      label: "Table Presentation playbook",
+      href: "/app/playbooks/table-presentation",
+    },
     questions: [
       "Are your tables turning over efficiently during peak periods?",
       "Are staff trained to handle more covers efficiently (multi-tabling, order batching)?",
@@ -63,7 +66,10 @@ export const LEAKS: Leak[] = [
     number: 3,
     title: "Staff Training & POS Efficiency",
     intro: "Is your team trained to use the tools that drive revenue?",
-    routesTo: { label: "Staff training playbook", href: null },
+    routesTo: {
+      label: "Staff Training playbook",
+      href: "/app/playbooks/staff-training",
+    },
     questions: [
       "Can all staff efficiently navigate the POS?",
       "Is service free of delays caused by tech inefficiencies?",

@@ -265,6 +265,22 @@ export default async function AppHome() {
           );
         })}
       </div>
+
+      {/* Playbooks entry point */}
+      <Link
+        href="/app/playbooks"
+        className="mt-4 flex items-center justify-between rounded-xl border border-dashed border-[color:var(--border-default)] px-5 py-4 transition-colors hover:border-[color:var(--accent)]"
+      >
+        <div>
+          <h3 className="text-base font-bold">The strategy playbooks</h3>
+          <p className="mt-0.5 text-sm text-fg-tertiary">
+            Menu psychology, seasonality, staff scripts & table presentation
+          </p>
+        </div>
+        <span className="text-[0.65rem] uppercase tracking-[0.14em] text-fg-muted">
+          Browse →
+        </span>
+      </Link>
     </main>
   );
 }
