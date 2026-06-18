@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { BhcLogo } from "@/components/brand/BhcLogo";
 import { BookCallButton } from "@/components/calendly/BookCallButton";
+import { AccountNavLink } from "@/components/layout/AccountNavLink";
 
 // Until the dedicated routes ship, the nav links anchor-scroll to home sections
 // and "Contact" jumps the user straight to their mail client.
@@ -66,13 +67,15 @@ export function Header() {
               </Link>
             ),
           )}
+          <AccountNavLink variant="default" />
           <BookCallButton variant="default">Book a call</BookCallButton>
         </nav>
 
-        {/* Mobile: just CTA */}
-        <BookCallButton variant="compact" className="md:hidden">
-          Book a call
-        </BookCallButton>
+        {/* Mobile: account + CTA */}
+        <div className="flex items-center gap-2 md:hidden">
+          <AccountNavLink variant="compact" />
+          <BookCallButton variant="compact">Book a call</BookCallButton>
+        </div>
       </div>
     </header>
   );
