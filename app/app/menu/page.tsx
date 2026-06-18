@@ -10,6 +10,7 @@ import {
   type MenuItem,
 } from "@/lib/tools/menu";
 import { getCurrentPeriodMonth, getSnapshot } from "@/lib/tools/snapshots";
+import { isMenuExtractConfigured } from "@/lib/ai/menu-extract";
 
 export const dynamic = "force-dynamic";
 
@@ -58,6 +59,7 @@ export default async function MenuPage() {
       <MenuCalculator
         initialItems={initialItems}
         initialTargetGpPct={initialTargetGpPct}
+        importEnabled={isMenuExtractConfigured()}
       />
     </main>
   );

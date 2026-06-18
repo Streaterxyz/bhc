@@ -25,6 +25,7 @@ export type MenuItem = {
   overhead: number; // allocated overhead $
   sell: number; // sell price $
   units: number; // monthly units sold (0 = not provided)
+  category?: string; // menu section (Entrées/Mains/Drinks) — for future grouping
 };
 
 export type MenuItemComputed = MenuItem & {

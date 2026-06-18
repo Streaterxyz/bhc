@@ -20,8 +20,20 @@ import {
   type RecipeElement,
 } from "@/lib/tools/menu";
 import { formatMoney } from "@/lib/tools/roster";
+import type { ExtractedMenuItem } from "@/lib/ai/menu-extract";
+import { MenuImport } from "./MenuImport";
 
-type ItemRow = Record<keyof MenuItem, string>;
+// Numeric inputs are held as strings; `category` rides along (stored, not
+// shown in the table — for future grouping).
+type ItemRow = {
+  name: string;
+  cost: string;
+  labour: string;
+  overhead: string;
+  sell: string;
+  units: string;
+  category?: string;
+};
 
 function toItemRows(items: MenuItem[]): ItemRow[] {
   return items.map((it) => ({
@@ -31,6 +43,7 @@ function toItemRows(items: MenuItem[]): ItemRow[] {
     overhead: it.overhead ? String(it.overhead) : "",
     sell: it.sell ? String(it.sell) : "",
     units: it.units ? String(it.units) : "",
+    category: it.category,
   }));
 }
 
@@ -42,6 +55,7 @@ function parseItemRows(rows: ItemRow[]): MenuItem[] {
     overhead: Number(r.overhead) || 0,
     sell: Number(r.sell) || 0,
     units: Number(r.units) || 0,
+    ...(r.category ? { category: r.category } : {}),
   }));
 }
 
@@ -51,9 +65,11 @@ const numCls =
 export function MenuCalculator({
   initialItems,
   initialTargetGpPct,
+  importEnabled = false,
 }: {
   initialItems: MenuItem[];
   initialTargetGpPct: number;
+  importEnabled?: boolean;
 }) {
   const router = useRouter();
   const [rows, setRows] = useState<ItemRow[]>(toItemRows(initialItems));
@@ -80,6 +96,27 @@ export function MenuCalculator({
 
   function addRow() {
     setRows((prev) => [...prev, toItemRows(emptyMenuItems(1))[0]]);
+  }
+
+  // Imported menu items: prefill name + sell (+ category). Drop any blank
+  // starter rows first so a fresh table isn't left with empty leading rows.
+  function importItems(items: ExtractedMenuItem[]) {
+    if (items.length === 0) return;
+    const imported: ItemRow[] = items.map((it) => ({
+      name: it.name,
+      cost: "",
+      labour: "",
+      overhead: "",
+      sell: it.price != null ? String(it.price) : "",
+      units: "",
+      category: it.category ?? undefined,
+    }));
+    setRows((prev) => {
+      const nonEmpty = prev.filter(
+        (r) => r.name.trim() !== "" || r.sell || r.cost,
+      );
+      return [...nonEmpty, ...imported];
+    });
   }
   function removeRow(i: number) {
     setRows((prev) => (prev.length > 1 ? prev.filter((_, j) => j !== i) : prev));
@@ -154,6 +191,16 @@ export function MenuCalculator({
           />
         </label>
       </div>
+
+      {/* Toolbar: scan/import */}
+      {importEnabled && (
+        <div className="mb-4 flex items-center justify-between gap-4">
+          <p className="text-sm text-fg-tertiary">
+            Type items in, or scan a photo/PDF of your menu to fill names + prices.
+          </p>
+          <MenuImport onImport={importItems} />
+        </div>
+      )}
 
       {/* Item table */}
       <div className="overflow-x-auto rounded-2xl border border-[color:var(--border-subtle)]">

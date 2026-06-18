@@ -228,6 +228,25 @@ export const toolSnapshots = pgTable(
   ],
 );
 
+// ─── ai_usage (AI menu import — daily cap) ──────────────────────────
+// One row per AI call (e.g. a menu scan). Counted per lead per day to
+// enforce a soft cap that protects against runaway Anthropic API cost.
+// Also doubles as a usage/cost audit log.
+export const aiUsage = pgTable(
+  "ai_usage",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    leadId: uuid("lead_id")
+      .notNull()
+      .references(() => leads.id, { onDelete: "cascade" }),
+    feature: text("feature").notNull(), // "menu_import"
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [index("ai_usage_lead_feature_created_idx").on(t.leadId, t.feature, t.createdAt)],
+);
+
 // ─── Type exports ───────────────────────────────────────────────────
 // Inferred row + insert types — saves manual TypeScript everywhere.
 export type Lead = typeof leads.$inferSelect;
