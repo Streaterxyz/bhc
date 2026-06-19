@@ -33,8 +33,13 @@ export default async function PlaybookPage({
     "playbooks",
     PLAYBOOKS_PERIOD,
   );
-  const implemented =
-    (snap?.payload as { implemented?: string[] } | null)?.implemented ?? [];
+  const payload =
+    (snap?.payload as {
+      implemented?: string[];
+      entries?: Record<string, string[]>;
+    } | null) ?? null;
+  const implemented = payload?.implemented ?? [];
+  const entries = payload?.entries ?? {};
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-10 lg:py-14">
@@ -101,6 +106,7 @@ export default async function PlaybookPage({
         <PlaybookActions
           actions={playbook.actions}
           initialImplemented={implemented}
+          initialEntries={entries}
         />
       </section>
     </main>

@@ -16,7 +16,17 @@ export type PlaybookSection = {
   bullets?: string[];
 };
 
-export type PlaybookAction = { id: string; label: string };
+/**
+ * A playbook action is either a simple checkbox ("mark as implemented") or,
+ * when `fields` is present, an interactive worksheet: the customer writes
+ * their venue's own answers into one input per field label. Each field
+ * string is the guiding prompt/placeholder for that input.
+ */
+export type PlaybookAction = {
+  id: string;
+  label: string;
+  fields?: string[];
+};
 export type PlaybookScript = { context: string; script: string };
 
 export type Playbook = {
@@ -68,7 +78,15 @@ export const PLAYBOOKS: Playbook[] = [
       { id: "menu-design-psychology:anchors", label: "Place 1–2 premium anchor items per section" },
       { id: "menu-design-psychology:prices", label: "Remove cents and un-align the price column" },
       { id: "menu-design-psychology:cut-metoo", label: "Cut 'me-too' low-margin dishes" },
-      { id: "menu-design-psychology:rename-heroes", label: "Rename hero items using technique + ingredient + flavour" },
+      {
+        id: "menu-design-psychology:rename-heroes",
+        label: "Rename hero items using technique + ingredient + flavour",
+        fields: [
+          "Hero #1 — new name",
+          "Hero #2 — new name",
+          "Hero #3 — new name",
+        ],
+      },
     ],
   },
   {
@@ -105,10 +123,21 @@ export const PLAYBOOKS: Playbook[] = [
       },
     ],
     actions: [
-      { id: "seasonal-menu-strategies:drivers", label: "Pick 1–2 seasonality drivers" },
+      {
+        id: "seasonal-menu-strategies:drivers",
+        label: "Pick 1–2 seasonality drivers",
+        fields: [
+          "Driver 1 (e.g. produce season)",
+          "Driver 2 (e.g. tourism peak)",
+        ],
+      },
       { id: "seasonal-menu-strategies:rhythm", label: "Set a menu change rhythm (quarterly)" },
       { id: "seasonal-menu-strategies:core-layer", label: "Define core winners vs seasonal layer" },
-      { id: "seasonal-menu-strategies:heroes", label: "Choose 2–3 seasonal heroes" },
+      {
+        id: "seasonal-menu-strategies:heroes",
+        label: "Choose 2–3 seasonal heroes",
+        fields: ["Shareable hero", "Signature main", "High-margin add-on"],
+      },
       { id: "seasonal-menu-strategies:margin-check", label: "Run the seasonal margin checklist before launching items" },
     ],
   },
@@ -134,7 +163,15 @@ export const PLAYBOOKS: Playbook[] = [
       },
     ],
     actions: [
-      { id: "staff-training:huddle", label: "Run a 5-min pre-shift huddle with 2–3 hero items" },
+      {
+        id: "staff-training:huddle",
+        label: "Run a 5-min pre-shift huddle with 2–3 hero items",
+        fields: [
+          "Tonight's hero item 1",
+          "Hero item 2",
+          "Hero item 3 (optional)",
+        ],
+      },
       { id: "staff-training:two-option", label: "Train the two-option recommendation" },
       { id: "staff-training:greeting", label: "Standardise the greeting + first touch" },
       { id: "staff-training:upgrade-language", label: "Use upgrade language for add-ons" },
@@ -190,7 +227,17 @@ export const PLAYBOOKS: Playbook[] = [
       },
     ],
     actions: [
-      { id: "table-presentation:journey", label: "Map your five guest-journey moments" },
+      {
+        id: "table-presentation:journey",
+        label: "Map your five guest-journey moments",
+        fields: [
+          "Arrival — first impression & comfort",
+          "Orientation — how to order / what's special",
+          "Momentum — drinks & first plates land",
+          "Peak — hero dishes land with impact",
+          "Close — dessert/coffee & easy payment",
+        ],
+      },
       { id: "table-presentation:baseline", label: "Set consistent baseline table standards" },
       { id: "table-presentation:water", label: "Offer water within 2 minutes of arrival" },
       { id: "table-presentation:plate-landing", label: "Use announce + place + confirm for plates" },
@@ -208,3 +255,13 @@ export const ALL_ACTION_IDS = PLAYBOOKS.flatMap((p) =>
 );
 
 export const TOTAL_PLAYBOOK_ACTIONS = ALL_ACTION_IDS.length;
+
+/**
+ * Map of worksheet action id → number of fillable fields. Used server-side to
+ * validate written entries (only known worksheet actions, capped field count).
+ */
+export const ACTION_FIELD_COUNTS: Record<string, number> = Object.fromEntries(
+  PLAYBOOKS.flatMap((p) => p.actions)
+    .filter((a) => a.fields && a.fields.length > 0)
+    .map((a) => [a.id, a.fields!.length]),
+);

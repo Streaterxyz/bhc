@@ -11,10 +11,32 @@ import { NextResponse } from "next/server";
 
 import { readLeadSession } from "@/lib/auth/cookie";
 import { hasActivePurchase } from "@/lib/purchases";
-import { ALL_ACTION_IDS } from "@/lib/tools/playbooks";
+import { ALL_ACTION_IDS, ACTION_FIELD_COUNTS } from "@/lib/tools/playbooks";
 import { PLAYBOOKS_PERIOD, upsertSnapshot } from "@/lib/tools/snapshots";
 
 export const runtime = "nodejs";
+
+const MAX_FIELD_CHARS = 600;
+
+/**
+ * Validate the written worksheet entries: keep only known worksheet action
+ * ids, cap each entry to that action's field count, coerce to strings capped
+ * at MAX_FIELD_CHARS. Anything unexpected is dropped.
+ */
+function cleanEntries(raw: unknown): Record<string, string[]> {
+  if (!raw || typeof raw !== "object") return {};
+  const out: Record<string, string[]> = {};
+  for (const [actionId, vals] of Object.entries(
+    raw as Record<string, unknown>,
+  )) {
+    const count = ACTION_FIELD_COUNTS[actionId];
+    if (!count || !Array.isArray(vals)) continue;
+    out[actionId] = vals
+      .slice(0, count)
+      .map((v) => (typeof v === "string" ? v.slice(0, MAX_FIELD_CHARS) : ""));
+  }
+  return out;
+}
 
 export async function POST(req: Request) {
   const session = await readLeadSession();
@@ -31,9 +53,9 @@ export async function POST(req: Request) {
     );
   }
 
-  let body: { implemented?: unknown };
+  let body: { implemented?: unknown; entries?: unknown };
   try {
-    body = (await req.json()) as { implemented?: unknown };
+    body = (await req.json()) as { implemented?: unknown; entries?: unknown };
   } catch {
     return NextResponse.json(
       { ok: false, error: "Invalid request." },
@@ -53,12 +75,14 @@ export async function POST(req: Request) {
       )
     : [];
 
+  const entries = cleanEntries(body.entries);
+
   try {
     await upsertSnapshot({
       leadId: session.leadId,
       tool: "playbooks",
       periodMonth: PLAYBOOKS_PERIOD,
-      payload: { implemented },
+      payload: { implemented, entries },
     });
     return NextResponse.json({ ok: true, count: implemented.length });
   } catch (err) {
