@@ -18,10 +18,40 @@
  * redeploying is what activates the player — expected for an env swap.
  */
 
-import { useCallback, useRef } from "react";
+import { useCallback, useRef, useState } from "react";
 import { Stream, type StreamPlayerApi } from "@cloudflare/stream-react";
 
 import { capture, EVENTS } from "@/lib/analytics";
+
+// Chapter markers — start time (seconds) + title. Timestamps verified
+// against the training transcript. Clicking a chapter seeks the player.
+const CHAPTERS: { t: number; title: string }[] = [
+  { t: 0, title: "Your venue isn't broken — it's leaking" },
+  { t: 102, title: "The 5 biggest profit killers" },
+  { t: 265, title: "Case study: $15k loss → $20k profit" },
+  { t: 549, title: "Tool 1 — Find your top 5 leaks" },
+  { t: 1032, title: "Tool 2 — Roster & labour waste" },
+  { t: 1314, title: "Tool 3 — Menu margin traps" },
+  { t: 1545, title: "Tool 4 — Supplier cost leaks" },
+  { t: 1766, title: "Bonus — The Silent Upsell System" },
+  { t: 1965, title: "Get the Profit Patch Kit" },
+];
+
+function formatTimecode(s: number): string {
+  const m = Math.floor(s / 60);
+  const sec = Math.round(s % 60);
+  return `${m}:${sec.toString().padStart(2, "0")}`;
+}
+
+/** Index of the latest chapter whose start time has passed. */
+function activeChapterFor(currentTime: number): number {
+  let idx = 0;
+  for (let i = 0; i < CHAPTERS.length; i++) {
+    if (currentTime >= CHAPTERS[i].t) idx = i;
+    else break;
+  }
+  return idx;
+}
 
 // Maps our DB milestone keys to PostHog event names.
 const PH_EVENT: Record<string, (typeof EVENTS)[keyof typeof EVENTS]> = {
@@ -82,11 +112,20 @@ export function TrainingVideo({ onProgress }: TrainingVideoProps = {}) {
   const playerRef = useRef<StreamPlayerApi | undefined>(undefined);
   const fired = useRef<Set<string>>(new Set());
   const maxFraction = useRef(0);
+  const [activeIdx, setActiveIdx] = useState(0);
 
   const fireOnce = useCallback((key: string, payload: EventPayload) => {
     if (fired.current.has(key)) return;
     fired.current.add(key);
     sendEvent(payload);
+  }, []);
+
+  const seekTo = useCallback((seconds: number, idx: number) => {
+    const p = playerRef.current;
+    if (!p) return;
+    p.currentTime = seconds;
+    setActiveIdx(idx);
+    void p.play?.();
   }, []);
 
   const handlePlay = useCallback(() => {
@@ -108,6 +147,10 @@ export function TrainingVideo({ onProgress }: TrainingVideoProps = {}) {
       maxFraction.current = pct;
       onProgress?.(pct);
     }
+
+    // Highlight the chapter currently playing (only re-render on change).
+    const idx = activeChapterFor(p.currentTime);
+    setActiveIdx((prev) => (prev === idx ? prev : idx));
 
     const base = {
       watchedSeconds: Math.round(p.currentTime),
@@ -170,17 +213,61 @@ export function TrainingVideo({ onProgress }: TrainingVideoProps = {}) {
   // [&>div]:inset-0`). Without that, the middle div sits in normal flow at
   // 0 height and the player collapses / renders in the corner.
   return (
-    <div className="training-video-frame relative aspect-video w-full overflow-hidden rounded-2xl border border-[color:var(--border-strong)] bg-black">
-      <Stream
-        controls
-        src={VIDEO_ID}
-        customerCode={CUSTOMER_CODE}
-        streamRef={playerRef}
-        onPlay={handlePlay}
-        onTimeUpdate={handleTimeUpdate}
-        onEnded={handleEnded}
-        responsive
-      />
+    <div className="lg:grid lg:grid-cols-[240px_1fr] lg:gap-4 lg:items-start">
+      {/* Video — first in DOM so it sits on top on mobile; moved to the
+          right column on desktop via order. */}
+      <div className="training-video-frame relative aspect-video w-full overflow-hidden rounded-2xl border border-[color:var(--border-strong)] bg-black lg:order-2">
+        <Stream
+          controls
+          src={VIDEO_ID}
+          customerCode={CUSTOMER_CODE}
+          streamRef={playerRef}
+          onPlay={handlePlay}
+          onTimeUpdate={handleTimeUpdate}
+          onEnded={handleEnded}
+          responsive
+        />
+      </div>
+
+      {/* Chapter rail — below the video on mobile, left column on desktop. */}
+      <nav
+        aria-label="Training chapters"
+        className="mt-4 rounded-2xl border border-[color:var(--border-subtle)] bg-bg-elevated p-2 lg:order-1 lg:mt-0 lg:max-h-[460px] lg:overflow-y-auto"
+      >
+        <p className="px-3 py-2 text-[0.65rem] tracking-[0.16em] uppercase text-fg-muted">
+          Chapters
+        </p>
+        <ul className="space-y-0.5">
+          {CHAPTERS.map((c, i) => {
+            const active = i === activeIdx;
+            return (
+              <li key={c.t}>
+                <button
+                  type="button"
+                  onClick={() => seekTo(c.t, i)}
+                  aria-current={active ? "true" : undefined}
+                  className={`flex w-full items-baseline gap-3 rounded-lg px-3 py-2 text-left transition-colors ${
+                    active
+                      ? "bg-[color:var(--accent)]/10"
+                      : "hover:bg-bg-base/60"
+                  }`}
+                >
+                  <span
+                    className={`shrink-0 text-xs tabular-nums ${active ? "text-[color:var(--accent)]" : "text-fg-muted"}`}
+                  >
+                    {formatTimecode(c.t)}
+                  </span>
+                  <span
+                    className={`text-sm leading-snug ${active ? "font-semibold text-fg-primary" : "text-fg-secondary"}`}
+                  >
+                    {c.title}
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
     </div>
   );
 }
