@@ -24,10 +24,13 @@ export function isEmailConfigured(): boolean {
 const FROM = process.env.RESEND_FROM ?? "hello@brendonhill.co";
 const REPLY_TO = process.env.RESEND_REPLY_TO ?? "brendon@brendonhill.co";
 
+type Attachment = { filename: string; content: Buffer };
+
 type SendArgs = {
   to: string;
   subject: string;
   html: string;
+  attachments?: Attachment[];
 };
 
 /**
@@ -35,7 +38,12 @@ type SendArgs = {
  * when Resend isn't configured. Never throws — email is best-effort and must
  * not break the calling flow (e.g. a Stripe webhook).
  */
-export async function sendEmail({ to, subject, html }: SendArgs): Promise<boolean> {
+export async function sendEmail({
+  to,
+  subject,
+  html,
+  attachments,
+}: SendArgs): Promise<boolean> {
   const resend = getResend();
   if (!resend) return false;
   try {
@@ -45,6 +53,9 @@ export async function sendEmail({ to, subject, html }: SendArgs): Promise<boolea
       to,
       subject,
       html,
+      ...(attachments && attachments.length
+        ? { attachments }
+        : {}),
     });
     if (error) {
       console.error("[resend] send error:", error);

@@ -30,7 +30,7 @@ import { getStripe, TOOLKIT_PRODUCT } from "@/lib/stripe/client";
 import { getLeadById } from "@/lib/leads";
 import { signMagicToken } from "@/lib/auth/magic";
 import { sendEmail } from "@/lib/email/resend";
-import { receiptEmail } from "@/lib/email/templates";
+import { receiptEmail, invoiceEmail } from "@/lib/email/templates";
 import { loopsUpsertContact, loopsTrackEvent } from "@/lib/loops";
 
 function siteOrigin(): string {
@@ -155,7 +155,44 @@ async function sendTaxInvoice(stripe: Stripe, pi: Stripe.PaymentIntent) {
       metadata: { paymentIntentId: pi.id, leadId: lead.id },
     });
     const finalized = await stripe.invoices.finalizeInvoice(invoice.id);
-    await stripe.invoices.pay(finalized.id, { paid_out_of_band: true });
+
+    // Mark it paid out-of-band (the PaymentIntent already collected the
+    // money). The SDK may auto-retry and the first attempt can already have
+    // succeeded → treat "already paid" as success.
+    if (finalized.status !== "paid") {
+      try {
+        await stripe.invoices.pay(finalized.id, { paid_out_of_band: true });
+      } catch (err) {
+        const msg =
+          (err as { raw?: { message?: string } })?.raw?.message ?? "";
+        if (!msg.toLowerCase().includes("already paid")) throw err;
+      }
+    }
+
+    // Stripe's auto-email is unreliable for out-of-band-paid invoices, so we
+    // deliver the official Stripe-generated PDF ourselves via Resend.
+    const inv = await stripe.invoices.retrieve(finalized.id);
+    if (inv.invoice_pdf) {
+      const pdfRes = await fetch(inv.invoice_pdf);
+      if (pdfRes.ok) {
+        const content = Buffer.from(await pdfRes.arrayBuffer());
+        const { subject, html } = invoiceEmail({
+          amount: `A$${(pi.amount / 100).toFixed(2)}`,
+          invoiceNumber: inv.number ?? undefined,
+        });
+        await sendEmail({
+          to: lead.email,
+          subject,
+          html,
+          attachments: [
+            {
+              filename: `BHC-tax-invoice-${inv.number ?? inv.id}.pdf`,
+              content,
+            },
+          ],
+        });
+      }
+    }
   } catch (err) {
     console.error("[stripe webhook] tax invoice failed:", err);
   }
