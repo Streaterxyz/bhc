@@ -132,6 +132,22 @@ export async function POST() {
       throw new Error("Finalized invoice has no confirmation secret.");
     }
 
+    // Make Stripe email the receipt (invoice + receipt PDFs) on payment.
+    // Stripe only auto-sends invoice receipts when it *auto-charges* a saved
+    // card; when the invoice is paid inline via the Payment Element's
+    // confirmation_secret it doesn't fire. Setting receipt_email on the
+    // underlying PaymentIntent makes Stripe send the receipt on success
+    // regardless of the dashboard email settings. The PI id is the part of
+    // the client_secret before "_secret_". Best-effort — never block checkout.
+    const paymentIntentId = clientSecret.split("_secret_")[0];
+    try {
+      await stripe.paymentIntents.update(paymentIntentId, {
+        receipt_email: lead.email,
+      });
+    } catch (err) {
+      console.error("[/api/checkout/intent] could not set receipt_email:", err);
+    }
+
     // 5. Stamp the customer id now; the PaymentIntent id is stamped by the
     //    webhook on invoice.paid (needed so charge.refunded can revoke).
     await db
