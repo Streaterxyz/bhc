@@ -20,8 +20,16 @@ import {
 import { getLeadById } from "@/lib/leads";
 import { getDashboardFigures, type DashboardFigures } from "@/lib/tools/dashboard";
 import { listSnapshots, PLAYBOOKS_PERIOD } from "@/lib/tools/snapshots";
+import { listNotes } from "@/lib/admin/notes";
 import type { LeakId, Severity } from "@/lib/tools/diagnostic";
 import type { CustomerStatus } from "./segments";
+
+export type NoteRow = {
+  id: string;
+  authorEmail: string;
+  body: string;
+  createdAtMs: number;
+};
 
 export type LeakSeverity = {
   id: LeakId;
@@ -68,6 +76,8 @@ export type CustomerDetail = {
   };
   playbooksImplemented: number;
   video: { milestones: string[]; lastAtMs: number | null };
+  notes: NoteRow[];
+  needsAttention: boolean;
 };
 
 function toPoints(
@@ -97,6 +107,7 @@ export async function getCustomerDetail(
     supplierSnaps,
     playbook,
     videoRows,
+    noteRows,
   ] = await Promise.all([
     db
       .select()
@@ -115,6 +126,7 @@ export async function getCustomerDetail(
     listSnapshots(leadId, "supplier"),
     listSnapshots(leadId, "playbooks"),
     db.select().from(videoEvents).where(eq(videoEvents.leadId, leadId)),
+    listNotes(leadId),
   ]);
 
   // Derived purchase status.
@@ -181,5 +193,12 @@ export async function getCustomerDetail(
     },
     playbooksImplemented: implemented,
     video: { milestones, lastAtMs: lastVideoMs },
+    notes: noteRows.map((n) => ({
+      id: n.id,
+      authorEmail: n.authorEmail,
+      body: n.body,
+      createdAtMs: n.createdAt.getTime(),
+    })),
+    needsAttention: lead.needsAttention,
   };
 }

@@ -110,6 +110,7 @@ export async function listCustomers(): Promise<CustomerRow[]> {
       hasCalculator: a?.hasCalculator ?? false,
       healthScore: a?.healthScore ?? null,
       dollarsIdentified,
+      needsAttention: l.needsAttention,
       source: l.source ?? null,
       createdAtMs,
       lastActivityMs,

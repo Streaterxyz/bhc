@@ -5,6 +5,8 @@ import { requireAdmin } from "@/lib/admin/auth";
 import { getCustomerDetail, type SnapshotPoint } from "@/lib/admin/customer-detail";
 import { LEAKS, type LeakId, type Severity } from "@/lib/tools/diagnostic";
 import type { CustomerStatus } from "@/lib/admin/segments";
+import { AttentionToggle } from "@/components/admin/AttentionToggle";
+import { CustomerNotes } from "@/components/admin/CustomerNotes";
 
 export const dynamic = "force-dynamic";
 
@@ -103,7 +105,7 @@ export default async function AdminCustomerDetailPage({
   const detail = await getCustomerDetail(leadId);
   if (!detail) notFound();
 
-  const { lead, status, purchases, venue, figures, diagnostic, toolHistory, playbooksImplemented, video } = detail;
+  const { lead, status, purchases, venue, figures, diagnostic, toolHistory, playbooksImplemented, video, notes, needsAttention } = detail;
 
   return (
     <div className="max-w-[1100px] mx-auto">
@@ -134,6 +136,7 @@ export default async function AdminCustomerDetailPage({
             {lead.status !== "active" ? ` · ${lead.status}` : ""}
           </p>
         </div>
+        <AttentionToggle leadId={lead.id} initial={needsAttention} />
       </div>
 
       {/* Key figures */}
@@ -259,6 +262,13 @@ export default async function AdminCustomerDetailPage({
         </Card>
         <Card title="Supplier — runs">
           <SnapshotTable points={toolHistory.supplier} />
+        </Card>
+      </div>
+
+      {/* Support notes (admin-writable) */}
+      <div className="mt-4">
+        <Card title="Support notes">
+          <CustomerNotes leadId={lead.id} initial={notes} />
         </Card>
       </div>
     </div>

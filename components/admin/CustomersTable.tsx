@@ -61,6 +61,12 @@ export function CustomersTable({ rows }: { rows: CustomerRow[] }) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [segment, setSegment] = useState<string | null>(null);
+  const [attentionOnly, setAttentionOnly] = useState(false);
+
+  const attentionCount = useMemo(
+    () => rows.filter((r) => r.needsAttention).length,
+    [rows],
+  );
 
   // Pre-compute segment counts over the full set.
   const segmentCounts = useMemo(() => {
@@ -73,6 +79,7 @@ export function CustomersTable({ rows }: { rows: CustomerRow[] }) {
     const q = search.trim().toLowerCase();
     const seg = segment ? SEGMENTS.find((s) => s.id === segment) : null;
     return rows.filter((r) => {
+      if (attentionOnly && !r.needsAttention) return false;
       if (statusFilter !== "all" && r.status !== statusFilter) return false;
       if (seg && !seg.predicate(r)) return false;
       if (q) {
@@ -81,7 +88,7 @@ export function CustomersTable({ rows }: { rows: CustomerRow[] }) {
       }
       return true;
     });
-  }, [rows, search, statusFilter, segment]);
+  }, [rows, search, statusFilter, segment, attentionOnly]);
 
   return (
     <div>
@@ -110,6 +117,19 @@ export function CustomersTable({ rows }: { rows: CustomerRow[] }) {
               {f.label}
             </button>
           ))}
+          <button
+            type="button"
+            onClick={() => setAttentionOnly((v) => !v)}
+            aria-pressed={attentionOnly}
+            className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors border ${
+              attentionOnly
+                ? "bg-red-500/15 border-red-500/40 text-red-400"
+                : "bg-bg-elevated border-[color:var(--border-default)] text-fg-tertiary hover:text-fg-secondary"
+            }`}
+          >
+            ★ Needs attention
+            <span className="ml-1.5 opacity-70">{attentionCount}</span>
+          </button>
         </div>
 
         {/* Segment chips */}
@@ -169,6 +189,15 @@ export function CustomersTable({ rows }: { rows: CustomerRow[] }) {
                     className="block group"
                   >
                     <span className="block font-medium text-fg-primary group-hover:text-[color:var(--accent)] transition-colors">
+                      {r.needsAttention && (
+                        <span
+                          className="text-red-400 mr-1"
+                          title="Needs attention"
+                          aria-label="Needs attention"
+                        >
+                          ★
+                        </span>
+                      )}
                       {r.name || "—"}
                     </span>
                     <span className="block text-xs text-fg-muted">{r.email}</span>

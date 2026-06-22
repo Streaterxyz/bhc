@@ -21,6 +21,7 @@ export type CustomerRow = {
   hasCalculator: boolean; // ran roster / menu / supplier
   healthScore: number | null; // latest diagnostic /100
   dollarsIdentified: number | null; // sum of latest $-tool figures
+  needsAttention: boolean; // admin manual flag
   source: string | null;
   createdAtMs: number;
   lastActivityMs: number;

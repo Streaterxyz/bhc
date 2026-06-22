@@ -18,6 +18,7 @@ import {
   varchar,
   uuid,
   jsonb,
+  boolean,
   index,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
@@ -55,6 +56,12 @@ export const leads = pgTable(
 
     // Lifecycle status. Refunds + bounces flip these.
     status: text("status").notNull().default("active"), // active | unsubscribed | bounced
+
+    // Admin manual "needs attention" flag (Phase 4) — admin annotation, not
+    // customer-owned data. flaggedBy/flaggedAt give a light audit trail.
+    needsAttention: boolean("needs_attention").notNull().default(false),
+    flaggedBy: text("flagged_by"),
+    flaggedAt: timestamp("flagged_at", { withTimezone: true }),
 
     // Free-form integrations payload (e.g. Loops contact ID after sync).
     meta: jsonb("meta"),
@@ -247,6 +254,29 @@ export const aiUsage = pgTable(
   (t) => [index("ai_usage_lead_feature_created_idx").on(t.leadId, t.feature, t.createdAt)],
 );
 
+// ─── admin_notes (Admin portal — Phase 4) ───────────────────────────
+// Support notes an admin writes against a customer. Admin-owned metadata
+// layered on top of the read-only customer data. One stream per lead,
+// rendered newest-first on the customer detail page.
+export const adminNotes = pgTable(
+  "admin_notes",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    leadId: uuid("lead_id")
+      .notNull()
+      .references(() => leads.id, { onDelete: "cascade" }),
+    authorEmail: text("author_email").notNull(),
+    body: text("body").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("admin_notes_lead_idx").on(t.leadId),
+    index("admin_notes_created_idx").on(t.createdAt),
+  ],
+);
+
 // ─── Type exports ───────────────────────────────────────────────────
 // Inferred row + insert types — saves manual TypeScript everywhere.
 export type Lead = typeof leads.$inferSelect;
@@ -261,3 +291,5 @@ export type VenueProfile = typeof venueProfiles.$inferSelect;
 export type NewVenueProfile = typeof venueProfiles.$inferInsert;
 export type ToolSnapshot = typeof toolSnapshots.$inferSelect;
 export type NewToolSnapshot = typeof toolSnapshots.$inferInsert;
+export type AdminNote = typeof adminNotes.$inferSelect;
+export type NewAdminNote = typeof adminNotes.$inferInsert;
