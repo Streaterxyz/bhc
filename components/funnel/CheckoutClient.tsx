@@ -98,7 +98,7 @@ export function CheckoutClient({ returnUrl }: Props) {
         <h1 className="text-3xl lg:text-4xl font-extrabold tracking-tight mb-2">
           The Profit Patch Kit
         </h1>
-        <div className="flex items-baseline gap-3 mb-6">
+        <div className="flex items-baseline gap-3 mb-1.5">
           <span className="text-2xl text-fg-muted line-through">
             ${ANCHOR_PRICE}
           </span>
@@ -108,6 +108,9 @@ export function CheckoutClient({ returnUrl }: Props) {
             Founding price
           </span>
         </div>
+        <p className="text-xs text-fg-muted mb-6">
+          One-time payment · GST inclusive (A$8.09 GST)
+        </p>
 
         <ul className="space-y-2.5 mb-8">
           {KIT_ITEMS.map((item) => (
