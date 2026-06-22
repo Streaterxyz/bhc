@@ -50,6 +50,27 @@ export function magicLinkEmail(link: string): { subject: string; html: string } 
   };
 }
 
+/** Admin portal sign-in link. */
+export function adminMagicLinkEmail(link: string): {
+  subject: string;
+  html: string;
+} {
+  return {
+    subject: "Your admin sign-in link — BHC",
+    html: shell(`
+      <h1 style="font-size:22px;font-weight:800;margin:0 0 14px;">Admin sign-in</h1>
+      <p style="font-size:15px;line-height:1.6;color:#444;margin:0 0 24px;">
+        Click below to sign in to the BHC admin portal. The link works for the
+        next 30 minutes and can only be used once.
+      </p>
+      <p style="margin:0 0 24px;">${button(link, "Sign in to admin")}</p>
+      <p style="font-size:13px;line-height:1.6;color:#888;margin:0;">
+        If you didn't request this, you can safely ignore it.
+      </p>
+    `),
+  };
+}
+
 /** Monthly "update your numbers" re-engagement nudge. */
 export function monthlyNudgeEmail(args: {
   link: string;
