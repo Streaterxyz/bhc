@@ -66,6 +66,102 @@ async function sendReceipt(leadId: string | undefined, amountCents: number) {
 }
 
 /**
+ * Generate + email a formal AU tax invoice for a paid order. Best-effort +
+ * env-gated (STRIPE_AUTO_INVOICE === "true"), so it never breaks the webhook
+ * and can be enabled per environment (test first, then live).
+ *
+ * The custom checkout charges via a PaymentIntent (no Customer/Invoice), so
+ * we create the invoice here, after the money is already taken:
+ *   1. Reuse/create a Customer (carrying the card's billing address so
+ *      Stripe Tax can determine GST applicability).
+ *   2. Add the dashboard Price as the line item (inherits product +
+ *      tax_behavior — set it to "inclusive" so $89 = total incl GST).
+ *   3. Create the invoice with automatic_tax, finalize it (Stripe assigns a
+ *      sequential invoice number + renders the PDF), and mark it
+ *      paid_out_of_band (the PaymentIntent already collected payment).
+ * With "Email finalized invoices" on in Stripe, the customer gets the
+ * numbered tax-invoice PDF automatically.
+ */
+/** Map a charge's billing address (string | null fields) to the customer
+ *  AddressParam shape (string | undefined). */
+function toAddressParam(
+  a: Stripe.Address | null | undefined,
+): Stripe.AddressParam | undefined {
+  if (!a) return undefined;
+  return {
+    line1: a.line1 ?? undefined,
+    line2: a.line2 ?? undefined,
+    city: a.city ?? undefined,
+    state: a.state ?? undefined,
+    postal_code: a.postal_code ?? undefined,
+    country: a.country ?? undefined,
+  };
+}
+
+async function sendTaxInvoice(stripe: Stripe, pi: Stripe.PaymentIntent) {
+  if (process.env.STRIPE_AUTO_INVOICE !== "true") return;
+  const leadId = pi.metadata?.leadId;
+  if (!leadId) return;
+  try {
+    const lead = await getLeadById(leadId);
+    if (!lead) return;
+
+    // Billing details from the charge — gives at least country/postcode,
+    // which Stripe Tax needs to decide whether GST applies.
+    const chargeId =
+      typeof pi.latest_charge === "string"
+        ? pi.latest_charge
+        : (pi.latest_charge?.id ?? null);
+    let billing: Stripe.Charge.BillingDetails | null = null;
+    if (chargeId) {
+      const charge = await stripe.charges.retrieve(chargeId);
+      billing = charge.billing_details ?? null;
+    }
+
+    // Reuse a customer by email if one exists, else create.
+    const existing = await stripe.customers.list({ email: lead.email, limit: 1 });
+    const addressParam = toAddressParam(billing?.address);
+    let customer = existing.data[0];
+    if (!customer) {
+      customer = await stripe.customers.create({
+        email: lead.email,
+        name: billing?.name ?? lead.name ?? undefined,
+        address: addressParam,
+      });
+    } else if (!customer.address && addressParam) {
+      customer = await stripe.customers.update(customer.id, {
+        address: addressParam,
+      });
+    }
+
+    // Line item from the dashboard Price (carries product + tax behaviour);
+    // fall back to an inline amount if no Price is configured.
+    // Use the actual charged amount as a tax-inclusive line item — Stripe Tax
+    // breaks out the GST component from the $89 inclusive total, so the
+    // invoice total always matches what the customer paid.
+    await stripe.invoiceItems.create({
+      customer: customer.id,
+      amount: pi.amount,
+      currency: pi.currency,
+      description: TOOLKIT_PRODUCT.name,
+      tax_behavior: "inclusive",
+    });
+
+    const invoice = await stripe.invoices.create({
+      customer: customer.id,
+      auto_advance: false,
+      collection_method: "charge_automatically",
+      automatic_tax: { enabled: true },
+      metadata: { paymentIntentId: pi.id, leadId: lead.id },
+    });
+    const finalized = await stripe.invoices.finalizeInvoice(invoice.id);
+    await stripe.invoices.pay(finalized.id, { paid_out_of_band: true });
+  } catch (err) {
+    console.error("[stripe webhook] tax invoice failed:", err);
+  }
+}
+
+/**
  * Best-effort marketing sync after a paid order. Moves the contact into the
  * customer lifecycle in Loops (so the sales nurture stops and onboarding can
  * start). Never throws — Loops being down must not 500 the webhook.
@@ -178,9 +274,12 @@ export async function POST(req: Request) {
           })
           .where(whereClause);
 
-        // Receipt + magic access link, then marketing sync (both best-effort).
+        // Receipt + magic access link, marketing sync, and the formal AU
+        // tax invoice — all best-effort (a failure here never 500s the
+        // webhook, which would make Stripe retry the whole event).
         await sendReceipt(pi.metadata?.leadId, pi.amount);
         await trackPurchase(pi.metadata?.leadId, pi.amount);
+        await sendTaxInvoice(stripe, pi);
         break;
       }
 
