@@ -3,11 +3,13 @@
 /**
  * Custom checkout experience. Two columns: a conversion-geared order
  * summary (founding price anchor, guarantee, trust, proof) and the Stripe
- * Payment Element. Creates a PaymentIntent on mount, then themes the
- * Elements to the BHC dark palette.
+ * Payment Element. A quick billing step (optional business details) runs
+ * first so they can be set on the invoice before it's finalized; on
+ * "Continue" we create the invoice and theme the Elements to the BHC dark
+ * palette.
  */
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { loadStripe, type Stripe } from "@stripe/stripe-js";
 import { Elements } from "@stripe/react-stripe-js";
 
@@ -62,33 +64,51 @@ type Props = {
   returnUrl: string;
 };
 
+const inputCls =
+  "w-full rounded-lg border border-[color:var(--border-strong)] bg-[#0e0e0e] px-3.5 py-2.5 text-sm text-fg-primary placeholder:text-fg-muted focus:border-[color:var(--accent)] focus:outline-none transition-colors";
+
 export function CheckoutClient({ returnUrl }: Props) {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [starting, setStarting] = useState(false);
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch("/api/checkout/intent", { method: "POST" });
-        const data = (await res.json()) as {
-          clientSecret?: string;
-          error?: string;
-        };
-        if (cancelled) return;
-        if (!res.ok || !data.clientSecret) {
-          setError(data.error ?? "Could not start checkout.");
-          return;
-        }
-        setClientSecret(data.clientSecret);
-      } catch {
-        if (!cancelled) setError("Network error. Please refresh and try again.");
+  // Optional "buying as a business?" billing details. Collected before the
+  // invoice is created so they land on the tax-invoice PDF.
+  const [isBusiness, setIsBusiness] = useState(false);
+  const [biz, setBiz] = useState({
+    name: "",
+    line1: "",
+    line2: "",
+    city: "",
+    state: "",
+    postalCode: "",
+  });
+
+  async function startPayment() {
+    setStarting(true);
+    setError(null);
+    try {
+      const business = isBusiness && biz.name.trim() ? biz : undefined;
+      const res = await fetch("/api/checkout/intent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ business }),
+      });
+      const data = (await res.json()) as {
+        clientSecret?: string;
+        error?: string;
+      };
+      if (!res.ok || !data.clientSecret) {
+        setError(data.error ?? "Could not start checkout.");
+        return;
       }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+      setClientSecret(data.clientSecret);
+    } catch {
+      setError("Network error. Please refresh and try again.");
+    } finally {
+      setStarting(false);
+    }
+  }
 
   return (
     <div className="w-full max-w-5xl mx-auto grid lg:grid-cols-[0.9fr_1.1fr] gap-10 lg:gap-16">
@@ -147,27 +167,100 @@ export function CheckoutClient({ returnUrl }: Props) {
 
       {/* ── Payment ── */}
       <div className="lg:order-2 rounded-2xl border border-[color:var(--border-strong)] bg-bg-elevated p-6 lg:p-8">
-        {error ? (
-          <div className="text-center py-10">
-            <p className="text-sm text-[#ff6b5e] mb-4">{error}</p>
-            <button
-              onClick={() => window.location.reload()}
-              className="text-sm text-[color:var(--accent)] hover:underline"
-            >
-              Try again
-            </button>
-          </div>
-        ) : !clientSecret || !getStripePromise() ? (
-          <div className="py-16 flex items-center justify-center">
-            <div className="h-6 w-6 rounded-full border-2 border-[color:var(--border-strong)] border-t-[color:var(--accent)] animate-spin" />
-          </div>
-        ) : (
+        {clientSecret && getStripePromise() ? (
+          /* Step 2 — payment. */
           <Elements
             stripe={getStripePromise()}
             options={{ clientSecret, appearance }}
           >
             <CheckoutForm returnUrl={returnUrl} />
           </Elements>
+        ) : (
+          /* Step 1 — billing details (optional business info), then continue. */
+          <div className="space-y-5">
+            <label className="flex items-center gap-3 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={isBusiness}
+                onChange={(e) => setIsBusiness(e.target.checked)}
+                className="h-4 w-4 accent-[color:var(--accent)]"
+              />
+              <span className="text-sm text-fg-secondary">
+                I&apos;m buying as a business — add details to my tax invoice
+              </span>
+            </label>
+
+            {isBusiness && (
+              <div className="space-y-3">
+                <input
+                  className={inputCls}
+                  placeholder="Business name"
+                  value={biz.name}
+                  onChange={(e) => setBiz({ ...biz, name: e.target.value })}
+                  autoComplete="organization"
+                />
+                <input
+                  className={inputCls}
+                  placeholder="Address line 1"
+                  value={biz.line1}
+                  onChange={(e) => setBiz({ ...biz, line1: e.target.value })}
+                  autoComplete="address-line1"
+                />
+                <input
+                  className={inputCls}
+                  placeholder="Address line 2 (optional)"
+                  value={biz.line2}
+                  onChange={(e) => setBiz({ ...biz, line2: e.target.value })}
+                  autoComplete="address-line2"
+                />
+                <div className="grid grid-cols-[1.5fr_1fr] gap-3">
+                  <input
+                    className={inputCls}
+                    placeholder="Suburb / City"
+                    value={biz.city}
+                    onChange={(e) => setBiz({ ...biz, city: e.target.value })}
+                    autoComplete="address-level2"
+                  />
+                  <input
+                    className={inputCls}
+                    placeholder="State"
+                    value={biz.state}
+                    onChange={(e) => setBiz({ ...biz, state: e.target.value })}
+                    autoComplete="address-level1"
+                  />
+                </div>
+                <input
+                  className={inputCls}
+                  placeholder="Postcode"
+                  value={biz.postalCode}
+                  onChange={(e) =>
+                    setBiz({ ...biz, postalCode: e.target.value })
+                  }
+                  autoComplete="postal-code"
+                  inputMode="numeric"
+                />
+              </div>
+            )}
+
+            {error && (
+              <p role="alert" className="text-sm text-[#ff6b5e]">
+                {error}
+              </p>
+            )}
+
+            <button
+              type="button"
+              onClick={startPayment}
+              disabled={starting || (isBusiness && !biz.name.trim())}
+              className="w-full inline-flex items-center justify-center gap-3 bg-white text-black font-semibold text-base px-8 py-4 rounded-full hover:bg-[color:var(--accent)] transition-colors disabled:opacity-70 disabled:cursor-wait"
+            >
+              {starting ? "Starting…" : "Continue to payment"}
+            </button>
+
+            <p className="text-center text-[0.7rem] tracking-[0.1em] uppercase text-fg-muted">
+              Secure payment · powered by Stripe
+            </p>
+          </div>
         )}
       </div>
     </div>

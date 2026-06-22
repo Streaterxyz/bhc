@@ -31,10 +31,47 @@ import { eq } from "drizzle-orm";
 import { readLeadSession } from "@/lib/auth/cookie";
 import { getLeadById } from "@/lib/leads";
 import { getStripe, getGstTaxRateId, TOOLKIT_PRODUCT } from "@/lib/stripe/client";
+import type Stripe from "stripe";
 
 export const runtime = "nodejs";
 
-export async function POST() {
+/** Trim + length-cap a possibly-non-string value; undefined when empty. */
+function str(v: unknown, max = 200): string | undefined {
+  if (typeof v !== "string") return undefined;
+  const t = v.trim();
+  return t ? t.slice(0, max) : undefined;
+}
+
+type BusinessDetails = { name: string; address?: Stripe.AddressParam };
+
+/**
+ * Parse the optional "buying as a business?" payload from the checkout. Only
+ * the display fields come from the body — the buyer identity is always the
+ * session lead. Treated as a business only when a name is present; the address
+ * is included only if at least one line was filled (country defaults to AU).
+ */
+function parseBusiness(raw: unknown): BusinessDetails | null {
+  if (!raw || typeof raw !== "object") return null;
+  const b = raw as Record<string, unknown>;
+  const name = str(b.name);
+  if (!name) return null;
+
+  const line1 = str(b.line1);
+  const line2 = str(b.line2);
+  const city = str(b.city);
+  const state = str(b.state, 80);
+  const postalCode = str(b.postalCode, 20);
+  const hasAddress = Boolean(line1 || city || state || postalCode);
+
+  return {
+    name,
+    address: hasAddress
+      ? { line1, line2, city, state, postal_code: postalCode, country: "AU" }
+      : undefined,
+  };
+}
+
+export async function POST(req: Request) {
   const stripe = getStripe();
   if (!stripe) {
     return NextResponse.json(
@@ -58,6 +95,12 @@ export async function POST() {
       { status: 401 },
     );
   }
+
+  // Optional business billing details — captured BEFORE we finalize so they
+  // appear on the tax-invoice PDF's "Bill to". Body may be empty for an
+  // individual buyer.
+  const body = await req.json().catch(() => ({}));
+  const business = parseBusiness((body as { business?: unknown })?.business);
 
   try {
     // 1. Amount/currency from the dashboard Price (fallback to constant).
@@ -83,15 +126,23 @@ export async function POST() {
       .returning();
 
     // 3. Reuse a Customer by email, else create one (the invoice + both PDFs
-    //    are addressed to it; we carry the lead name for a nicer invoice).
+    //    are addressed to it). When business details were supplied we set the
+    //    company name + address so they show on the finalized invoice.
     const existing = await stripe.customers.list({ email: lead.email, limit: 1 });
-    const customer =
-      existing.data[0] ??
-      (await stripe.customers.create({
+    let customer = existing.data[0];
+    if (!customer) {
+      customer = await stripe.customers.create({
         email: lead.email,
-        name: lead.name ?? undefined,
+        name: business?.name ?? lead.name ?? undefined,
+        address: business?.address,
         metadata: { leadId: lead.id },
-      }));
+      });
+    } else if (business) {
+      customer = await stripe.customers.update(customer.id, {
+        name: business.name,
+        address: business.address,
+      });
+    }
 
     // 4. Draft invoice → one inclusive-GST line item → finalize. We finalize
     //    manually (auto_advance:false) so Stripe never dunns an abandoned
