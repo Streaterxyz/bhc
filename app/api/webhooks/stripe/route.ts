@@ -134,19 +134,10 @@ async function sendTaxInvoice(stripe: Stripe, pi: Stripe.PaymentIntent) {
       });
     }
 
-    // Line item from the dashboard Price (carries product + tax behaviour);
-    // fall back to an inline amount if no Price is configured.
-    // Use the actual charged amount as a tax-inclusive line item — Stripe Tax
-    // breaks out the GST component from the $89 inclusive total, so the
-    // invoice total always matches what the customer paid.
-    await stripe.invoiceItems.create({
-      customer: customer.id,
-      amount: pi.amount,
-      currency: pi.currency,
-      description: TOOLKIT_PRODUCT.name,
-      tax_behavior: "inclusive",
-    });
-
+    // Create the (empty) draft invoice FIRST. The pinned Stripe API version
+    // does NOT auto-pull "pending" invoice items into a new invoice, so we
+    // must attach the line item to this invoice explicitly (below) — without
+    // that, the invoice finalizes empty at A$0.00.
     const invoice = await stripe.invoices.create({
       customer: customer.id,
       auto_advance: false,
@@ -154,6 +145,19 @@ async function sendTaxInvoice(stripe: Stripe, pi: Stripe.PaymentIntent) {
       automatic_tax: { enabled: true },
       metadata: { paymentIntentId: pi.id, leadId: lead.id },
     });
+
+    // The charged amount as a tax-inclusive line item, attached to the
+    // invoice above — Stripe Tax breaks out the GST from the $89 inclusive
+    // total, so the invoice total always matches what the customer paid.
+    await stripe.invoiceItems.create({
+      customer: customer.id,
+      invoice: invoice.id,
+      amount: pi.amount,
+      currency: pi.currency,
+      description: TOOLKIT_PRODUCT.name,
+      tax_behavior: "inclusive",
+    });
+
     const finalized = await stripe.invoices.finalizeInvoice(invoice.id);
 
     // Mark it paid out-of-band (the PaymentIntent already collected the
