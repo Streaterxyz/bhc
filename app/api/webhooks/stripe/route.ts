@@ -2,18 +2,26 @@
  * POST /api/webhooks/stripe
  *
  * Stripe event sink. Verifies the signature against STRIPE_WEBHOOK_SECRET,
- * then reconciles our `purchases` rows:
+ * then reconciles our `purchases` rows.
  *
- *   checkout.session.completed → flip pending → paid, stamp payment intent
- *                                + customer id, set paidAt. This is what
- *                                grants download access.
- *   charge.refunded            → flip paid → refunded, set refundedAt.
- *                                This is what revokes download access
- *                                (the /downloads page + signed-URL route
- *                                check status === 'paid').
+ * The custom /checkout uses Stripe's invoice-first flow (an Invoice is
+ * finalized up front and paid with the Payment Element), so access is granted
+ * when the invoice is paid:
  *
- * Idempotent: re-delivered events (Stripe retries) are safe — we only
- * transition forward and match on stable ids.
+ *   invoice.paid    → flip pending → paid, stamp the PaymentIntent + customer
+ *                     ids, set paidAt. Grants /app access. Sends our branded
+ *                     access email (magic link — Stripe can't) + Loops sync.
+ *                     Stripe itself natively emails the GST tax-invoice PDF
+ *                     and the payment-receipt PDF.
+ *   charge.refunded → flip paid → refunded, set refundedAt. Revokes access.
+ *                     Reconciles cleanly because a real charge backs the
+ *                     invoice (a refund can issue a proper credit note).
+ *   checkout.session.completed → legacy Stripe-hosted checkout (dormant);
+ *                     kept so any stray event is still handled.
+ *
+ * Idempotent: re-delivered events are safe — the grant only fires on the
+ * pending → paid transition (so the access email never double-sends), and we
+ * match on stable ids.
  *
  * IMPORTANT: needs the raw request body for signature verification, so we
  * read req.text() (not req.json()) and never let any framework parse it
@@ -25,12 +33,12 @@ import type Stripe from "stripe";
 
 import { db } from "@/lib/db/client";
 import { purchases } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { and, eq, ne } from "drizzle-orm";
 import { getStripe, TOOLKIT_PRODUCT } from "@/lib/stripe/client";
 import { getLeadById } from "@/lib/leads";
 import { signMagicToken } from "@/lib/auth/magic";
 import { sendEmail } from "@/lib/email/resend";
-import { receiptEmail, invoiceEmail } from "@/lib/email/templates";
+import { receiptEmail } from "@/lib/email/templates";
 import { loopsUpsertContact, loopsTrackEvent } from "@/lib/loops";
 
 function siteOrigin(): string {
@@ -41,10 +49,12 @@ function siteOrigin(): string {
 }
 
 /**
- * Best-effort receipt + magic access link after a paid order. Never throws —
- * an email hiccup must not make the webhook 500 and trigger Stripe retries.
+ * Best-effort branded access email (magic link into /app) after a paid order.
+ * Stripe sends the invoice + receipt PDFs; this is the one thing it can't —
+ * the gated access link. Never throws — an email hiccup must not 500 the
+ * webhook and trigger Stripe retries.
  */
-async function sendReceipt(leadId: string | undefined, amountCents: number) {
+async function sendAccessEmail(leadId: string | undefined, amountCents: number) {
   if (!leadId) return;
   try {
     const lead = await getLeadById(leadId);
@@ -61,172 +71,7 @@ async function sendReceipt(leadId: string | undefined, amountCents: number) {
     });
     await sendEmail({ to: lead.email, subject, html });
   } catch (err) {
-    console.error("[stripe webhook] receipt email failed:", err);
-  }
-}
-
-/**
- * Generate + email a formal AU tax invoice for a paid order. Best-effort +
- * env-gated (STRIPE_AUTO_INVOICE === "true"), so it never breaks the webhook
- * and can be enabled per environment (test first, then live).
- *
- * The custom checkout charges via a PaymentIntent (no Customer/Invoice), so
- * we create the invoice here, after the money is already taken:
- *   1. Reuse/create a Customer (carrying the card's billing address so
- *      Stripe Tax can determine GST applicability).
- *   2. Add the dashboard Price as the line item (inherits product +
- *      tax_behavior — set it to "inclusive" so $89 = total incl GST).
- *   3. Create the invoice with automatic_tax, finalize it (Stripe assigns a
- *      sequential invoice number + renders the PDF), and mark it
- *      paid_out_of_band (the PaymentIntent already collected payment).
- * With "Email finalized invoices" on in Stripe, the customer gets the
- * numbered tax-invoice PDF automatically.
- */
-/** Map a charge's billing address (string | null fields) to the customer
- *  AddressParam shape (string | undefined). */
-function toAddressParam(
-  a: Stripe.Address | null | undefined,
-): Stripe.AddressParam | undefined {
-  if (!a) return undefined;
-  return {
-    line1: a.line1 ?? undefined,
-    line2: a.line2 ?? undefined,
-    city: a.city ?? undefined,
-    state: a.state ?? undefined,
-    postal_code: a.postal_code ?? undefined,
-    country: a.country ?? undefined,
-  };
-}
-
-async function sendTaxInvoice(stripe: Stripe, pi: Stripe.PaymentIntent) {
-  if (process.env.STRIPE_AUTO_INVOICE !== "true") return;
-  const leadId = pi.metadata?.leadId;
-  if (!leadId) return;
-  try {
-    const lead = await getLeadById(leadId);
-    if (!lead) return;
-
-    // Billing details from the charge — gives at least country/postcode,
-    // which Stripe Tax needs to decide whether GST applies.
-    const chargeId =
-      typeof pi.latest_charge === "string"
-        ? pi.latest_charge
-        : (pi.latest_charge?.id ?? null);
-    let billing: Stripe.Charge.BillingDetails | null = null;
-    if (chargeId) {
-      const charge = await stripe.charges.retrieve(chargeId);
-      billing = charge.billing_details ?? null;
-    }
-
-    // Reuse a customer by email if one exists, else create.
-    const existing = await stripe.customers.list({ email: lead.email, limit: 1 });
-    const addressParam = toAddressParam(billing?.address);
-    let customer = existing.data[0];
-    if (!customer) {
-      customer = await stripe.customers.create({
-        email: lead.email,
-        name: billing?.name ?? lead.name ?? undefined,
-        address: addressParam,
-      });
-    } else if (!customer.address && addressParam) {
-      customer = await stripe.customers.update(customer.id, {
-        address: addressParam,
-      });
-    }
-
-    // Create the (empty) draft invoice FIRST. The pinned Stripe API version
-    // does NOT auto-pull "pending" invoice items into a new invoice, so we
-    // must attach the line item to this invoice explicitly (below) — without
-    // that, the invoice finalizes empty at A$0.00.
-    // Idempotency keyed to the PaymentIntent — a webhook retry (e.g. after a
-    // transient timeout while we wait for the PDF) reuses the same invoice
-    // instead of creating a duplicate.
-    const idem = `bhc_inv_${pi.id}`;
-    const invoice = await stripe.invoices.create(
-      {
-        customer: customer.id,
-        auto_advance: false,
-        collection_method: "charge_automatically",
-        automatic_tax: { enabled: true },
-        metadata: { paymentIntentId: pi.id, leadId: lead.id },
-      },
-      { idempotencyKey: idem },
-    );
-
-    // The charged amount as a tax-inclusive line item, attached to the
-    // invoice above — Stripe Tax breaks out the GST from the $89 inclusive
-    // total, so the invoice total always matches what the customer paid.
-    await stripe.invoiceItems.create(
-      {
-        customer: customer.id,
-        invoice: invoice.id,
-        amount: pi.amount,
-        currency: pi.currency,
-        description: TOOLKIT_PRODUCT.name,
-        tax_behavior: "inclusive",
-      },
-      { idempotencyKey: `${idem}_item` },
-    );
-
-    // Finalize — on a retry the invoice may already be finalized, so fall
-    // back to retrieving it.
-    let finalized: Stripe.Invoice;
-    try {
-      finalized = await stripe.invoices.finalizeInvoice(invoice.id);
-    } catch {
-      finalized = await stripe.invoices.retrieve(invoice.id);
-    }
-
-    // Mark it paid out-of-band (the PaymentIntent already collected the
-    // money). The SDK may auto-retry and the first attempt can already have
-    // succeeded → treat "already paid" as success.
-    if (finalized.status !== "paid") {
-      try {
-        await stripe.invoices.pay(finalized.id, { paid_out_of_band: true });
-      } catch (err) {
-        const msg =
-          (err as { raw?: { message?: string } })?.raw?.message ?? "";
-        if (!msg.toLowerCase().includes("already paid")) throw err;
-      }
-    }
-
-    // Wait for the invoice to settle to "paid" and for Stripe to regenerate
-    // the PDF in its paid state — otherwise we'd grab the stale "amount due"
-    // render. Poll to paid, then a short settle for the async PDF rebuild,
-    // so the attached PDF shows "Paid" + the payment history (not "due").
-    let inv = await stripe.invoices.retrieve(finalized.id);
-    for (let i = 0; i < 6 && inv.status !== "paid"; i++) {
-      await new Promise((r) => setTimeout(r, 1000));
-      inv = await stripe.invoices.retrieve(finalized.id);
-    }
-    await new Promise((r) => setTimeout(r, 3000));
-    inv = await stripe.invoices.retrieve(finalized.id);
-
-    // Stripe's auto-email is unreliable for out-of-band-paid invoices, so we
-    // deliver the official Stripe-generated (now paid) PDF ourselves via Resend.
-    if (inv.invoice_pdf) {
-      const pdfRes = await fetch(inv.invoice_pdf);
-      if (pdfRes.ok) {
-        const content = Buffer.from(await pdfRes.arrayBuffer());
-        const { subject, html } = invoiceEmail({
-          amount: `A$${(pi.amount / 100).toFixed(2)}`,
-          invoiceNumber: inv.number ?? undefined,
-        });
-        await sendEmail({
-          to: lead.email,
-          subject,
-          html,
-          attachments: [
-            {
-              filename: `BHC-tax-invoice-${inv.number ?? inv.id}.pdf`,
-              content,
-            },
-          ],
-        });
-      }
-    }
-  } catch (err) {
-    console.error("[stripe webhook] tax invoice failed:", err);
+    console.error("[stripe webhook] access email failed:", err);
   }
 }
 
@@ -250,11 +95,28 @@ async function trackPurchase(leadId: string | undefined, amountCents: number) {
   }
 }
 
+/** Pull the PaymentIntent id from a paid invoice's payments so a later
+ *  charge.refunded can match the purchase and revoke access. */
+async function resolveInvoicePaymentIntentId(
+  stripe: Stripe,
+  invoiceId: string,
+): Promise<string | null> {
+  try {
+    const full = await stripe.invoices.retrieve(invoiceId, {
+      expand: ["payments"],
+    });
+    const payment = full.payments?.data?.[0]?.payment;
+    if (!payment?.payment_intent) return null;
+    return typeof payment.payment_intent === "string"
+      ? payment.payment_intent
+      : payment.payment_intent.id;
+  } catch (err) {
+    console.error("[stripe webhook] could not resolve invoice PI:", err);
+    return null;
+  }
+}
+
 export const runtime = "nodejs";
-// Headroom for the brief wait while Stripe regenerates the paid invoice PDF
-// (well within Stripe's webhook response tolerance; prevents a timeout →
-// retry → duplicate-invoice scenario).
-export const maxDuration = 30;
 
 export async function POST(req: Request) {
   const stripe = getStripe();
@@ -290,9 +152,64 @@ export async function POST(req: Request) {
 
   try {
     switch (event.type) {
+      case "invoice.paid": {
+        const inv = event.data.object as Stripe.Invoice;
+        const purchaseId = inv.metadata?.purchaseId;
+        if (!purchaseId || !inv.id) break; // not one of our checkout invoices
+
+        const customerId =
+          typeof inv.customer === "string"
+            ? inv.customer
+            : (inv.customer?.id ?? null);
+        const paymentIntentId = await resolveInvoicePaymentIntentId(
+          stripe,
+          inv.id,
+        );
+
+        // Grant only on the pending → paid transition so re-delivered events
+        // never double-send the access email.
+        const granted = await db
+          .update(purchases)
+          .set({
+            status: "paid",
+            paidAt: new Date(),
+            stripePaymentIntentId: paymentIntentId,
+            stripeCustomerId: customerId,
+          })
+          .where(
+            and(eq(purchases.id, purchaseId), ne(purchases.status, "paid")),
+          )
+          .returning();
+
+        if (granted.length === 0) break; // already processed
+
+        const leadId = inv.metadata?.leadId;
+        await sendAccessEmail(leadId, inv.amount_paid);
+        await trackPurchase(leadId, inv.amount_paid);
+        break;
+      }
+
+      case "charge.refunded": {
+        const charge = event.data.object as Stripe.Charge;
+        const paymentIntentId =
+          typeof charge.payment_intent === "string"
+            ? charge.payment_intent
+            : (charge.payment_intent?.id ?? null);
+        if (!paymentIntentId) break;
+
+        // Revoke access: flip to refunded. The /app + downloads gates check
+        // status === 'paid', so this instantly removes entitlement.
+        await db
+          .update(purchases)
+          .set({ status: "refunded", refundedAt: new Date() })
+          .where(eq(purchases.stripePaymentIntentId, paymentIntentId));
+        break;
+      }
+
       case "checkout.session.completed": {
+        // Legacy Stripe-hosted checkout (dormant). Kept so a stray event is
+        // still reconciled if one ever arrives.
         const cs = event.data.object as Stripe.Checkout.Session;
-        // Only mark paid when Stripe confirms the payment is settled.
         if (cs.payment_status !== "paid") break;
 
         const purchaseId = cs.metadata?.purchaseId;
@@ -305,8 +222,6 @@ export async function POST(req: Request) {
             ? cs.customer
             : (cs.customer?.id ?? null);
 
-        // Prefer matching on our metadata purchaseId; fall back to the
-        // session id (covers events that predate the metadata stamp).
         const whereClause = purchaseId
           ? eq(purchases.id, purchaseId)
           : eq(purchases.stripeCheckoutSessionId, cs.id);
@@ -320,56 +235,6 @@ export async function POST(req: Request) {
             stripeCustomerId: customerId,
           })
           .where(whereClause);
-        break;
-      }
-
-      case "payment_intent.succeeded": {
-        // Custom /checkout flow (Payment Element). The pending purchase was
-        // stamped with purchaseId in metadata when the intent was created.
-        const pi = event.data.object as Stripe.PaymentIntent;
-        const purchaseId = pi.metadata?.purchaseId;
-        const customerId =
-          typeof pi.customer === "string"
-            ? pi.customer
-            : (pi.customer?.id ?? null);
-
-        const whereClause = purchaseId
-          ? eq(purchases.id, purchaseId)
-          : eq(purchases.stripePaymentIntentId, pi.id);
-
-        await db
-          .update(purchases)
-          .set({
-            status: "paid",
-            paidAt: new Date(),
-            stripePaymentIntentId: pi.id,
-            stripeCustomerId: customerId,
-          })
-          .where(whereClause);
-
-        // Receipt + magic access link, marketing sync, and the formal AU
-        // tax invoice — all best-effort (a failure here never 500s the
-        // webhook, which would make Stripe retry the whole event).
-        await sendReceipt(pi.metadata?.leadId, pi.amount);
-        await trackPurchase(pi.metadata?.leadId, pi.amount);
-        await sendTaxInvoice(stripe, pi);
-        break;
-      }
-
-      case "charge.refunded": {
-        const charge = event.data.object as Stripe.Charge;
-        const paymentIntentId =
-          typeof charge.payment_intent === "string"
-            ? charge.payment_intent
-            : (charge.payment_intent?.id ?? null);
-        if (!paymentIntentId) break;
-
-        // Revoke access: flip to refunded. The /downloads gate checks
-        // status === 'paid', so this instantly removes entitlement.
-        await db
-          .update(purchases)
-          .set({ status: "refunded", refundedAt: new Date() })
-          .where(eq(purchases.stripePaymentIntentId, paymentIntentId));
         break;
       }
 

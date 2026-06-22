@@ -49,3 +49,48 @@ export const TOOLKIT_PRODUCT = {
 /** Display-only anchor price (in whole dollars). Never charged — used to
  *  show the founding-member discount. The real charge is amountCents above. */
 export const TOOLKIT_ANCHOR_PRICE = 149;
+
+let cachedTaxRateId: string | undefined;
+
+/**
+ * Resolve the AU GST tax rate id to attach to the invoice line item so the
+ * Stripe-generated tax invoice always shows a GST breakdown.
+ *
+ * We use an explicit, inclusive tax rate (not automatic_tax) because the
+ * invoice is finalized BEFORE the customer enters a billing address — and
+ * automatic_tax fails to finalize without one (customer_tax_location_invalid).
+ * An inclusive 10% GST rate needs no address and is correct for AU sales: the
+ * $89 already contains the GST component.
+ *
+ * Prefers STRIPE_TAX_RATE_ID; otherwise finds-or-creates a BHC-tagged rate and
+ * caches its id for the process.
+ */
+export async function getGstTaxRateId(stripe: Stripe): Promise<string> {
+  if (cachedTaxRateId !== undefined) return cachedTaxRateId;
+
+  const fromEnv = process.env.STRIPE_TAX_RATE_ID;
+  if (fromEnv) {
+    cachedTaxRateId = fromEnv;
+    return fromEnv;
+  }
+
+  const existing = await stripe.taxRates.list({ active: true, limit: 100 });
+  const found = existing.data.find((r) => r.metadata?.bhc_gst === "v1");
+  if (found) {
+    cachedTaxRateId = found.id;
+    return found.id;
+  }
+
+  const created = await stripe.taxRates.create({
+    display_name: "GST",
+    description: "Australian GST",
+    jurisdiction: "AU",
+    country: "AU",
+    percentage: 10,
+    inclusive: true,
+    tax_type: "gst",
+    metadata: { bhc_gst: "v1" },
+  });
+  cachedTaxRateId = created.id;
+  return created.id;
+}

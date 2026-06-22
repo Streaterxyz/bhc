@@ -1,21 +1,26 @@
 /**
  * POST /api/checkout/intent
  *
- * Creates a Stripe PaymentIntent for the custom /checkout page (Payment
- * Element). Cookie-gated; the purchase is tied to the lead id from the
- * verified session, never the body.
+ * Starts the custom /checkout (Payment Element) using Stripe's
+ * "invoice-first" flow: we create + finalize an Invoice up front and pay it
+ * with the Payment Element. This is what lets Stripe natively email BOTH a
+ * formal (GST) tax-invoice PDF and a payment-receipt PDF, AND keeps refunds
+ * fully reconcilable (a real charge backs the invoice, so a refund issues a
+ * proper credit note — unlike an out-of-band-paid invoice).
+ *
+ * Cookie-gated; the purchase is tied to the lead id from the verified
+ * session, never the body.
  *
  * Flow:
  *   1. Verify lead session → load lead.
  *   2. Resolve amount/currency from the dashboard Price (source of truth),
  *      falling back to TOOLKIT_PRODUCT.
- *   3. Insert a `pending` purchases row.
- *   4. Create a PaymentIntent stamped with purchaseId/leadId metadata
- *      (the webhook reconciles on payment_intent.succeeded) and return its
- *      client_secret for the Payment Element.
- *
- * automatic_payment_methods lets Stripe surface every eligible method
- * (card, Apple Pay, Google Pay, Link) in the Element with no extra config.
+ *   3. Insert a `pending` purchases row (its id rides on invoice metadata so
+ *      the webhook can reconcile on invoice.paid).
+ *   4. Reuse/create a Customer, create a draft Invoice + one inclusive-GST
+ *      line item, then finalize it expanding `confirmation_secret`.
+ *   5. Return the invoice PaymentIntent's client_secret for the Payment
+ *      Element (the form confirms it exactly like a standalone PI).
  */
 
 import { NextResponse } from "next/server";
@@ -25,7 +30,7 @@ import { purchases } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { readLeadSession } from "@/lib/auth/cookie";
 import { getLeadById } from "@/lib/leads";
-import { getStripe, TOOLKIT_PRODUCT } from "@/lib/stripe/client";
+import { getStripe, getGstTaxRateId, TOOLKIT_PRODUCT } from "@/lib/stripe/client";
 
 export const runtime = "nodejs";
 
@@ -65,7 +70,7 @@ export async function POST() {
       if (price.currency) currency = price.currency;
     }
 
-    // 2. Pending purchase row (id used as PaymentIntent metadata).
+    // 2. Pending purchase row (id rides on invoice metadata for the webhook).
     const [purchase] = await db
       .insert(purchases)
       .values({
@@ -77,29 +82,66 @@ export async function POST() {
       })
       .returning();
 
-    // 3. PaymentIntent.
-    const intent = await stripe.paymentIntents.create({
-      amount: amountCents,
+    // 3. Reuse a Customer by email, else create one (the invoice + both PDFs
+    //    are addressed to it; we carry the lead name for a nicer invoice).
+    const existing = await stripe.customers.list({ email: lead.email, limit: 1 });
+    const customer =
+      existing.data[0] ??
+      (await stripe.customers.create({
+        email: lead.email,
+        name: lead.name ?? undefined,
+        metadata: { leadId: lead.id },
+      }));
+
+    // 4. Draft invoice → one inclusive-GST line item → finalize. We finalize
+    //    manually (auto_advance:false) so Stripe never dunns an abandoned
+    //    checkout; the open invoice just sits until paid (or ignored).
+    const taxRateId = await getGstTaxRateId(stripe);
+
+    const invoice = await stripe.invoices.create({
+      customer: customer.id,
       currency,
-      receipt_email: lead.email,
+      collection_method: "charge_automatically",
+      auto_advance: false,
       description: TOOLKIT_PRODUCT.name,
-      automatic_payment_methods: { enabled: true },
       metadata: {
         purchaseId: purchase.id,
         leadId: lead.id,
         productId: TOOLKIT_PRODUCT.id,
       },
     });
+    if (!invoice.id) throw new Error("Invoice was created without an id.");
 
-    // 4. Persist the PI id for webhook reconciliation.
+    await stripe.invoiceItems.create({
+      customer: customer.id,
+      invoice: invoice.id,
+      amount: amountCents,
+      currency,
+      description: TOOLKIT_PRODUCT.name,
+      tax_rates: [taxRateId],
+    });
+
+    // Finalizing assigns the sequential invoice number, renders the PDF, and
+    // creates the PaymentIntent whose client_secret we hand to the Element.
+    const finalized = await stripe.invoices.finalizeInvoice(invoice.id, {
+      expand: ["confirmation_secret"],
+    });
+
+    const clientSecret = finalized.confirmation_secret?.client_secret;
+    if (!clientSecret) {
+      throw new Error("Finalized invoice has no confirmation secret.");
+    }
+
+    // 5. Stamp the customer id now; the PaymentIntent id is stamped by the
+    //    webhook on invoice.paid (needed so charge.refunded can revoke).
     await db
       .update(purchases)
-      .set({ stripePaymentIntentId: intent.id })
+      .set({ stripeCustomerId: customer.id })
       .where(eq(purchases.id, purchase.id));
 
     return NextResponse.json({
       ok: true,
-      clientSecret: intent.client_secret,
+      clientSecret,
       amountCents,
       currency,
     });

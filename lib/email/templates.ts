@@ -50,29 +50,6 @@ export function magicLinkEmail(link: string): { subject: string; html: string } 
   };
 }
 
-/** Tax invoice delivery — the official Stripe-generated PDF is attached. */
-export function invoiceEmail(args: {
-  amount: string; // e.g. "A$89.00"
-  invoiceNumber?: string;
-}): { subject: string; html: string } {
-  const { amount, invoiceNumber } = args;
-  return {
-    subject: invoiceNumber
-      ? `Tax invoice ${invoiceNumber} — Brendon Hill Consultancy`
-      : "Your tax invoice — Brendon Hill Consultancy",
-    html: shell(`
-      <h1 style="font-size:22px;font-weight:800;margin:0 0 14px;">Your tax invoice</h1>
-      <p style="font-size:15px;line-height:1.6;color:#444;margin:0 0 22px;">
-        Thanks again for your purchase. Your GST tax invoice${invoiceNumber ? ` (<strong>${invoiceNumber}</strong>)` : ""}
-        for <strong>${amount}</strong> is attached as a PDF for your records.
-      </p>
-      <p style="font-size:13px;line-height:1.6;color:#888;margin:0;">
-        Questions about your invoice? Just reply to this email.
-      </p>
-    `),
-  };
-}
-
 /** Admin portal sign-in link. */
 export function adminMagicLinkEmail(link: string): {
   subject: string;
