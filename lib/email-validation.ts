@@ -63,7 +63,15 @@ const COMMON_DOMAINS = [
   // an exact match short-circuits and we never "correct" a valid address.
   "ymail.com", "rocketmail.com", "gmx.com",
 ];
-const COMMON_TLDS = ["com", "com.au", "net", "net.au", "org", "org.au", "edu.au", "co", "io", "me"];
+// Explicit TLD typo → correct map. An edit-distance match is wrong here:
+// a transposed ".cmo" is distance-2 from ".com" but distance-1 from the
+// *valid* ".co", so fuzzy matching would "correct" cmo→co. A fixed map of
+// known mistakes is deterministic and avoids mangling legitimate TLDs.
+const TLD_TYPOS: Record<string, string> = {
+  con: "com", cmo: "com", comm: "com", coom: "com", ocm: "com", vom: "com",
+  cpm: "com", xom: "com", "com,": "com", "con.au": "com.au", "cmo.au": "com.au",
+  nte: "net", ned: "net", orh: "org", ogr: "org", "ner": "net",
+};
 
 /** Classic Levenshtein edit distance. */
 function editDistance(a: string, b: string): number {
@@ -118,13 +126,13 @@ export function suggestEmailCorrection(email: string): string | null {
   const domainFix = closest(domain, COMMON_DOMAINS, 2);
   if (domainFix) return `${local}@${domainFix}`;
 
-  // 2. TLD-only fix (catches gmail.con, mybiz.cmo) while keeping the
-  //    second-level domain intact.
+  // 2. TLD-only fix for a custom domain (e.g. "mybiz.cmo" → "mybiz.com")
+  //    via the explicit typo map, keeping the second-level domain intact.
   const dot = domain.indexOf(".");
   const sld = domain.slice(0, dot);
   const tld = domain.slice(dot + 1);
-  const tldFix = closest(tld, COMMON_TLDS, 1);
-  if (tldFix) return `${local}@${sld}.${tldFix}`;
+  const tldFix = TLD_TYPOS[tld];
+  if (tldFix && tldFix !== tld) return `${local}@${sld}.${tldFix}`;
 
   return null;
 }
