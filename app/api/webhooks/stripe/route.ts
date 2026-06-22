@@ -138,27 +138,44 @@ async function sendTaxInvoice(stripe: Stripe, pi: Stripe.PaymentIntent) {
     // does NOT auto-pull "pending" invoice items into a new invoice, so we
     // must attach the line item to this invoice explicitly (below) — without
     // that, the invoice finalizes empty at A$0.00.
-    const invoice = await stripe.invoices.create({
-      customer: customer.id,
-      auto_advance: false,
-      collection_method: "charge_automatically",
-      automatic_tax: { enabled: true },
-      metadata: { paymentIntentId: pi.id, leadId: lead.id },
-    });
+    // Idempotency keyed to the PaymentIntent — a webhook retry (e.g. after a
+    // transient timeout while we wait for the PDF) reuses the same invoice
+    // instead of creating a duplicate.
+    const idem = `bhc_inv_${pi.id}`;
+    const invoice = await stripe.invoices.create(
+      {
+        customer: customer.id,
+        auto_advance: false,
+        collection_method: "charge_automatically",
+        automatic_tax: { enabled: true },
+        metadata: { paymentIntentId: pi.id, leadId: lead.id },
+      },
+      { idempotencyKey: idem },
+    );
 
     // The charged amount as a tax-inclusive line item, attached to the
     // invoice above — Stripe Tax breaks out the GST from the $89 inclusive
     // total, so the invoice total always matches what the customer paid.
-    await stripe.invoiceItems.create({
-      customer: customer.id,
-      invoice: invoice.id,
-      amount: pi.amount,
-      currency: pi.currency,
-      description: TOOLKIT_PRODUCT.name,
-      tax_behavior: "inclusive",
-    });
+    await stripe.invoiceItems.create(
+      {
+        customer: customer.id,
+        invoice: invoice.id,
+        amount: pi.amount,
+        currency: pi.currency,
+        description: TOOLKIT_PRODUCT.name,
+        tax_behavior: "inclusive",
+      },
+      { idempotencyKey: `${idem}_item` },
+    );
 
-    const finalized = await stripe.invoices.finalizeInvoice(invoice.id);
+    // Finalize — on a retry the invoice may already be finalized, so fall
+    // back to retrieving it.
+    let finalized: Stripe.Invoice;
+    try {
+      finalized = await stripe.invoices.finalizeInvoice(invoice.id);
+    } catch {
+      finalized = await stripe.invoices.retrieve(invoice.id);
+    }
 
     // Mark it paid out-of-band (the PaymentIntent already collected the
     // money). The SDK may auto-retry and the first attempt can already have
@@ -173,9 +190,20 @@ async function sendTaxInvoice(stripe: Stripe, pi: Stripe.PaymentIntent) {
       }
     }
 
+    // Wait for the invoice to settle to "paid" and for Stripe to regenerate
+    // the PDF in its paid state — otherwise we'd grab the stale "amount due"
+    // render. Poll to paid, then a short settle for the async PDF rebuild,
+    // so the attached PDF shows "Paid" + the payment history (not "due").
+    let inv = await stripe.invoices.retrieve(finalized.id);
+    for (let i = 0; i < 6 && inv.status !== "paid"; i++) {
+      await new Promise((r) => setTimeout(r, 1000));
+      inv = await stripe.invoices.retrieve(finalized.id);
+    }
+    await new Promise((r) => setTimeout(r, 3000));
+    inv = await stripe.invoices.retrieve(finalized.id);
+
     // Stripe's auto-email is unreliable for out-of-band-paid invoices, so we
-    // deliver the official Stripe-generated PDF ourselves via Resend.
-    const inv = await stripe.invoices.retrieve(finalized.id);
+    // deliver the official Stripe-generated (now paid) PDF ourselves via Resend.
     if (inv.invoice_pdf) {
       const pdfRes = await fetch(inv.invoice_pdf);
       if (pdfRes.ok) {
@@ -223,6 +251,10 @@ async function trackPurchase(leadId: string | undefined, amountCents: number) {
 }
 
 export const runtime = "nodejs";
+// Headroom for the brief wait while Stripe regenerates the paid invoice PDF
+// (well within Stripe's webhook response tolerance; prevents a timeout →
+// retry → duplicate-invoice scenario).
+export const maxDuration = 30;
 
 export async function POST(req: Request) {
   const stripe = getStripe();
