@@ -92,3 +92,20 @@ export async function getLeadByEmail(email: string): Promise<Lead | null> {
     .limit(1);
   return row ?? null;
 }
+
+/**
+ * Flip a lead's lifecycle status by email (active | unsubscribed | bounced).
+ * Used by the Resend webhook: hard bounces → "bounced", spam complaints →
+ * "unsubscribed". No-op if the email isn't a known lead. Returns the number
+ * of rows updated.
+ */
+export async function setLeadStatusByEmail(
+  email: string,
+  status: "active" | "unsubscribed" | "bounced",
+): Promise<number> {
+  const result = await db
+    .update(leads)
+    .set({ status })
+    .where(eq(leads.email, normalizeEmail(email)));
+  return result.rowCount ?? 0;
+}

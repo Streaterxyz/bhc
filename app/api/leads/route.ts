@@ -12,6 +12,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { upsertLead, isValidEmail, normalizeEmail } from "@/lib/leads";
+import { isDisposableEmail } from "@/lib/email-validation";
 import { setLeadCookie } from "@/lib/auth/cookie";
 import { verifyTurnstile } from "@/lib/turnstile";
 import { loopsUpsertContact, loopsTrackEvent } from "@/lib/loops";
@@ -47,6 +48,19 @@ export async function POST(req: NextRequest) {
   if (!rawEmail || !isValidEmail(rawEmail)) {
     return NextResponse.json(
       { ok: false, error: "Please enter a valid email address." },
+      { status: 422 },
+    );
+  }
+
+  // Block known disposable/throwaway domains — the receipt + magic access
+  // link must reach a real inbox.
+  if (isDisposableEmail(rawEmail)) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error:
+          "Please use a permanent email address — your access link is sent there.",
+      },
       { status: 422 },
     );
   }

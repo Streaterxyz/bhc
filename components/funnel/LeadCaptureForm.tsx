@@ -15,6 +15,7 @@ import { motion } from "framer-motion";
 import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 
 import { capture, identifyLead, EVENTS } from "@/lib/analytics";
+import { suggestEmailCorrection } from "@/lib/email-validation";
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 // Module-level constant so the prop identity is STABLE across re-renders —
@@ -37,6 +38,23 @@ export function LeadCaptureForm() {
   const [name, setName] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
+
+  // "Did you mean …?" — computed on blur so we don't nag mid-typing.
+  const [suggestion, setSuggestion] = useState<string | null>(null);
+
+  const onEmailChange = useCallback((value: string) => {
+    setEmail(value);
+    setSuggestion(null); // clear stale suggestion while they edit
+  }, []);
+
+  const onEmailBlur = useCallback(() => {
+    setSuggestion(email ? suggestEmailCorrection(email) : null);
+  }, [email]);
+
+  const applySuggestion = useCallback(() => {
+    if (suggestion) setEmail(suggestion);
+    setSuggestion(null);
+  }, [suggestion]);
 
   // Turnstile token + a handle to reset the widget after a failed attempt
   // (tokens are single-use).
@@ -154,12 +172,26 @@ export function LeadCaptureForm() {
             type="email"
             required
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => onEmailChange(e.target.value)}
+            onBlur={onEmailBlur}
             placeholder="you@email.com"
             autoComplete="email"
             aria-invalid={status === "error"}
             className="w-full px-5 py-4 rounded-xl bg-bg-elevated border border-[color:var(--border-default)] text-fg-primary placeholder:text-fg-muted focus:outline-none focus:border-[color:var(--accent)] transition-colors"
           />
+          {suggestion && (
+            <p className="mt-2 text-sm text-fg-tertiary">
+              Did you mean{" "}
+              <button
+                type="button"
+                onClick={applySuggestion}
+                className="text-[color:var(--accent)] font-semibold underline underline-offset-2 hover:opacity-80"
+              >
+                {suggestion}
+              </button>
+              ?
+            </p>
+          )}
         </div>
       </div>
 
