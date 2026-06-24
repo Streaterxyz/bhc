@@ -39,9 +39,9 @@ export default async function PlaybooksIndex() {
           The strategy playbooks
         </h1>
         <p className="text-fg-secondary">
-          The thinking behind the numbers — menu psychology, seasonality, staff
-          scripts and table presentation. Work through each and tick off what
-          you&apos;ve implemented.
+          The thinking behind the numbers — menu psychology, staff scripts,
+          maximising covers and 20+ quick wins. Work through each and tick off
+          what you&apos;ve implemented.
         </p>
       </div>
 

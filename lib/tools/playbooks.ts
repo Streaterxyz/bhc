@@ -25,6 +25,8 @@ export type PlaybookSection = {
 export type PlaybookAction = {
   id: string;
   label: string;
+  /** Optional supporting line shown under the label (e.g. the expected impact). */
+  detail?: string;
   fields?: string[];
 };
 export type PlaybookScript = { context: string; script: string };
@@ -333,6 +335,126 @@ export const PLAYBOOKS: Playbook[] = [
         context: "Pre-shift capacity huddle",
         script:
           "We're at [X] covers booked tonight against a [Y] cap. Clearing owner is [name] — let's reset every table inside 10 minutes and keep the waitlist moving.",
+      },
+    ],
+  },
+  {
+    slug: "quick-wins",
+    title: "Small Fix. Big Impact.",
+    intro:
+      "Twenty-one small, high-leverage changes — each one lifts revenue, cuts cost, or saves labour. You don't need all of them at once. Pick one, implement it, tick it off, and let the gains compound.",
+    supportsLeak: null,
+    sections: [
+      {
+        heading: "How to use this",
+        body: "These are proven, low-effort moves — not a project plan. Work top-down or choose the ones that fit your venue right now, implement one, and check it off. The last one, The 1% Rule, is the habit that ties them all together: one improvement a month, every month.",
+      },
+    ],
+    actions: [
+      {
+        id: "quick-wins:menu-engineering",
+        label: "Menu Engineering — remove one low-selling menu item this month",
+        detail: "Impact: Simpler ordering, lower stockholding and reduced waste.",
+      },
+      {
+        id: "quick-wins:hero-product",
+        label: "Hero Product Focus — choose one hero item and promote it in every shift brief",
+        detail: "Impact: Increased average spend and sales consistency.",
+      },
+      {
+        id: "quick-wins:daily-sales-target",
+        label: "Daily Sales Target — set a daily revenue target visible to the entire team",
+        detail: "Impact: Creates accountability and focus.",
+      },
+      {
+        id: "quick-wins:supplier-rationalisation",
+        label: "Supplier Rationalisation — review suppliers and consolidate where possible",
+        detail: "Impact: Reduced administration and stronger buying power.",
+      },
+      {
+        id: "quick-wins:weekly-stock-checks",
+        label: "Weekly Stock Checks — stocktake one key category every week instead of waiting for month end",
+        detail: "Impact: Identify issues before they become expensive.",
+      },
+      {
+        id: "quick-wins:first-drink-five-min",
+        label: "First Drink in Under Five Minutes — measure and coach around beverage delivery times",
+        detail: "Impact: Improved guest satisfaction and increased beverage sales.",
+      },
+      {
+        id: "quick-wins:pre-shift-huddles",
+        label: "Pre-Shift Huddles — run a five-minute team briefing before every service",
+        detail: "Impact: Better communication and fewer service mistakes.",
+      },
+      {
+        id: "quick-wins:daily-labour-review",
+        label: "Daily Labour Review — compare actual labour costs against budget every day",
+        detail: "Impact: Prevents wage blowouts before payroll.",
+      },
+      {
+        id: "quick-wins:waitlist",
+        label: "Introduce a Waitlist — capture guests who would otherwise be turned away",
+        detail: "Impact: Increased cover count and recovered revenue.",
+      },
+      {
+        id: "quick-wins:clear-dead-stock",
+        label: "Clear Dead Stock — identify and move one dead-stock item each week",
+        detail: "Impact: Frees up cash and storage space.",
+      },
+      {
+        id: "quick-wins:avg-spend-per-cover",
+        label: "Track Average Spend Per Cover — review weekly and share results with the team",
+        detail: "Impact: Reveals hidden revenue opportunities.",
+      },
+      {
+        id: "quick-wins:events-calendar",
+        label: "Build a 90-Day Events Calendar — plan promotions and trading periods ahead of time",
+        detail: "Impact: More proactive revenue generation.",
+      },
+      {
+        id: "quick-wins:portion-control",
+        label: "Portion Control Audits — check the top ten menu items quarterly",
+        detail: "Impact: Improved consistency and stronger gross profit.",
+      },
+      {
+        id: "quick-wins:floor-presence",
+        label: "Manager Floor Presence — spend more time on the floor and less behind a desk",
+        detail: "Impact: Better coaching, service and sales execution.",
+      },
+      {
+        id: "quick-wins:top-customers",
+        label: "Review Your Top Customers — identify your highest-spending and most frequent guests",
+        detail: "Impact: Increased loyalty and repeat revenue.",
+      },
+      {
+        id: "quick-wins:reduce-complexity",
+        label: "Reduce Menu Complexity — limit unnecessary modifiers and customisation options",
+        detail: "Impact: Faster service and reduced kitchen errors.",
+      },
+      {
+        id: "quick-wins:ordering-cutoffs",
+        label: "Set Ordering Cut-Offs — establish clear ordering days and minimum stock levels",
+        detail: "Impact: Reduced panic purchasing and overspending.",
+      },
+      {
+        id: "quick-wins:trading-hours",
+        label: "Review Trading Hours Quarterly — assess whether all opening hours are profitable",
+        detail: "Impact: Eliminates unprofitable trading periods.",
+      },
+      {
+        id: "quick-wins:kpi-dashboard",
+        label: "Create a Manager KPI Dashboard — track revenue, labour, GP and average spend in one place",
+        detail: "Impact: Faster and more informed decision making.",
+      },
+      {
+        id: "quick-wins:par-level-review",
+        label: "Monthly Par Level Review — update stock holding levels based on actual sales trends",
+        detail: "Impact: Reduced wastage, expiry and excess inventory.",
+      },
+      {
+        id: "quick-wins:one-percent-rule",
+        label: "The 1% Rule — identify one change each month that increases revenue, reduces costs or saves labour",
+        detail: "Impact: Small improvements compound into significant annual profit growth.",
       },
     ],
   },

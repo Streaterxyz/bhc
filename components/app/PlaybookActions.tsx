@@ -119,10 +119,17 @@ export function PlaybookActions({
                     </svg>
                   )}
                 </span>
-                <span
-                  className={`text-sm ${done ? "text-fg-tertiary line-through" : "text-fg-secondary"}`}
-                >
-                  {a.label}
+                <span className="min-w-0">
+                  <span
+                    className={`block text-sm ${done ? "text-fg-tertiary line-through" : "text-fg-secondary"}`}
+                  >
+                    {a.label}
+                  </span>
+                  {a.detail && (
+                    <span className="mt-0.5 block text-xs text-fg-muted">
+                      {a.detail}
+                    </span>
+                  )}
                 </span>
               </button>
 

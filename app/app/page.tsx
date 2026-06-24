@@ -66,6 +66,9 @@ export default async function AppHome() {
   // Supplier is health-only (not a $-tool) — surface its reviewed state.
   const supplierSnap = await getLatestSnapshot(session!.leadId, "supplier");
   const supplierScore = supplierSnap?.healthScore ?? null;
+  // Silent Upsell System — the bonus tool. Health-only, not a diagnostic leak.
+  const silentSnap = await getLatestSnapshot(session!.leadId, "silent-upsell");
+  const silentScore = silentSnap?.healthScore ?? null;
 
   const health = diagnostic.healthScore ?? 0;
   const results = (
@@ -266,15 +269,61 @@ export default async function AppHome() {
         })}
       </div>
 
+      {/* Bonus tool — Silent Upsell System (health-only, not a leak) */}
+      <Link
+        href="/app/silent-upsell"
+        className="mt-4 flex items-center justify-between gap-4 rounded-xl border border-[color:var(--border-subtle)] bg-bg-elevated px-5 py-4 transition-colors hover:border-[color:var(--border-strong)]"
+      >
+        <div className="min-w-0">
+          <div className="mb-1 flex items-center gap-2.5">
+            <span
+              className="rounded-full px-2.5 py-0.5 text-[0.65rem] font-semibold"
+              style={{ color: "var(--accent)", backgroundColor: "rgba(244,194,28,0.14)" }}
+            >
+              Bonus
+            </span>
+            <span className="text-[0.65rem] tracking-[0.14em] uppercase text-fg-muted">
+              Silent Upsell System
+            </span>
+          </div>
+          <h3 className="truncate text-base font-bold">
+            Plug the silent sales leak
+          </h3>
+          {silentScore !== null ? (
+            <p className="mt-0.5 text-sm">
+              <span
+                className="font-semibold"
+                style={{ color: silentScore >= 75 ? "#1f9d6b" : "#e0900b" }}
+              >
+                {silentScore}/100
+              </span>{" "}
+              <span className="text-fg-tertiary">sales health</span>
+            </p>
+          ) : (
+            <p className="mt-0.5 text-sm text-fg-tertiary">
+              Audit every guest interaction for missed revenue
+            </p>
+          )}
+        </div>
+        <div className="shrink-0 text-right">
+          <span className="text-xs font-medium text-fg-secondary">
+            Silent Upsell audit
+          </span>
+          <div className="text-[0.65rem] uppercase tracking-[0.14em] text-fg-muted">
+            {silentScore !== null ? "Reviewed" : "Open →"}
+          </div>
+        </div>
+      </Link>
+
       {/* Playbooks entry point */}
       <Link
         href="/app/playbooks"
-        className="mt-4 flex items-center justify-between rounded-xl border border-dashed border-[color:var(--border-default)] px-5 py-4 transition-colors hover:border-[color:var(--accent)]"
+        className="mt-3 flex items-center justify-between rounded-xl border border-dashed border-[color:var(--border-default)] px-5 py-4 transition-colors hover:border-[color:var(--accent)]"
       >
         <div>
           <h3 className="text-base font-bold">The strategy playbooks</h3>
           <p className="mt-0.5 text-sm text-fg-tertiary">
-            Menu psychology, seasonality, staff scripts & table presentation
+            Menu psychology, staff scripts, maximising covers & 20+ quick wins
           </p>
         </div>
         <span className="text-[0.65rem] uppercase tracking-[0.14em] text-fg-muted">
