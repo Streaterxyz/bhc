@@ -244,6 +244,98 @@ export const PLAYBOOKS: Playbook[] = [
       { id: "table-presentation:point-heroes", label: "Train staff to point to the hero section" },
     ],
   },
+  {
+    slug: "maximising-covers",
+    title: "Maximising Covers",
+    intro:
+      "Stop leaving revenue on the floor. Know your true capacity, turn tables without rushing guests, and deliberately push the ceiling — so a full room actually means a full till.",
+    supportsLeak: "revenue-capping",
+    sections: [
+      {
+        heading: "Know your true capacity",
+        body: "You can't fix what you don't measure. Most venues guess their ceiling and quietly run 15–25% below it. Start with the maths, then track it weekly.",
+        bullets: [
+          "Max covers per service = seats × expected table turns",
+          "Track average spend per cover weekly — a cover without spend isn't revenue",
+          "Track table turn times weekly — minutes from seat to reset",
+          "Aim for ≥90% of max capacity in peak services before you blame demand",
+        ],
+      },
+      {
+        heading: "Turn tables without rushing guests",
+        body: "Throughput comes from the gaps between guests, not from hurrying them. Tighten the reset, not the meal.",
+        bullets: [
+          "Reset and reseat within 10 minutes at peak — assign a clearing owner",
+          "Pre-bus and stagger courses so tables free up predictably",
+          "Run an active waitlist at peak so an open table is filled, not lost",
+          "Use timed bookings (e.g. 90/120 min) to protect turns on big nights",
+        ],
+      },
+      {
+        heading: "Lift spend per cover",
+        body: "More covers is half the equation; more per cover is the other. Make upselling measurable, not optional.",
+        bullets: [
+          "Measure upsell performance per server weekly (add-ons, sides, drinks)",
+          "Set one focus add-on per shift and track the attachment rate",
+          "Coach the lowest performer with the two-option recommendation",
+        ],
+      },
+      {
+        heading: "Push the ceiling deliberately",
+        body: "Capacity grows when you test it. Once a quarter, prove what your team can actually handle — then raise the caps to match.",
+        bullets: [
+          "Stress-test true operational capacity every 90 days",
+          "If the test holds, raise booking caps to match — review at least yearly",
+          "Aim to absorb +10% covers today without breaking service",
+        ],
+      },
+    ],
+    actions: [
+      {
+        id: "maximising-covers:capacity",
+        label: "Calculate your max cover capacity per service",
+        fields: [
+          "Seats available",
+          "Expected table turns per service",
+          "Max covers per service (seats × turns)",
+        ],
+      },
+      {
+        id: "maximising-covers:weekly-kpis",
+        label: "Set weekly KPIs for spend per cover and turn time",
+        fields: [
+          "Avg spend per cover — current → target",
+          "Avg table turn time — current → target",
+          "Capacity achieved — current % of max",
+        ],
+      },
+      { id: "maximising-covers:reseat", label: "Set a 10-minute reset-and-reseat standard for peak" },
+      { id: "maximising-covers:waitlist", label: "Run an active waitlist during peak periods" },
+      { id: "maximising-covers:upsell-tracking", label: "Measure upselling performance per server weekly" },
+      {
+        id: "maximising-covers:stress-test",
+        label: "Run a 90-day operational capacity stress test",
+        fields: [
+          "Date of last capacity test",
+          "Covers handled vs booking cap",
+          "Bottleneck found",
+        ],
+      },
+      { id: "maximising-covers:raise-caps", label: "Review and raise booking caps to match tested capacity" },
+    ],
+    scripts: [
+      {
+        context: "Peak waitlist — text when a table opens",
+        script:
+          "Hi [name], it's [venue] — your table's ready now. We'll hold it for 10 minutes. See you soon!",
+      },
+      {
+        context: "Pre-shift capacity huddle",
+        script:
+          "We're at [X] covers booked tonight against a [Y] cap. Clearing owner is [name] — let's reset every table inside 10 minutes and keep the waitlist moving.",
+      },
+    ],
+  },
 ];
 
 export const PLAYBOOK_BY_SLUG: Record<string, Playbook> = Object.fromEntries(
