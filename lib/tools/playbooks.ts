@@ -44,9 +44,9 @@ export type Playbook = {
 export const PLAYBOOKS: Playbook[] = [
   {
     slug: "menu-design-psychology",
-    title: "Menu Design Psychology",
+    title: "Menu Engineering & Design Psychology",
     intro:
-      "Design a menu that quietly guides guests toward your best-margin, best-experience choices — while still feeling guest-first.",
+      "Your menu is your most important sales tool. A well-designed menu influences what guests order, increases average spend and highlights your most profitable items — without making guests feel sold to.",
     supportsLeak: "menu-profitability",
     sections: [
       {
@@ -74,8 +74,16 @@ export const PLAYBOOKS: Playbook[] = [
         heading: "Names that sell (without being cringe)",
         body: "Strong names are specific, sensory, and benefit-led. Algorithm: technique + hero ingredient + key flavour + optional provenance. e.g. 'Chargrilled prawns, chilli & lime'.",
       },
+      {
+        heading: "The 10-second navigation test",
+        body: "A guest decides in seconds. If they can't spot your signature dish, your best-margin item, the hero of each section, or what makes items different — fast — you lose the sale to indecision. Run this check on your current menu and tick what already passes.",
+      },
     ],
     actions: [
+      { id: "menu-design-psychology:nav-signature", label: "A guest can identify your signature item in under 10 seconds" },
+      { id: "menu-design-psychology:nav-margin", label: "A guest can identify your highest-margin item in under 10 seconds" },
+      { id: "menu-design-psychology:nav-hero", label: "Every section has a clear hero item" },
+      { id: "menu-design-psychology:nav-difference", label: "Guests can easily understand what makes each item different" },
       { id: "menu-design-psychology:decision-headers", label: "Add decision-based section headers" },
       { id: "menu-design-psychology:anchors", label: "Place 1–2 premium anchor items per section" },
       { id: "menu-design-psychology:prices", label: "Remove cents and un-align the price column" },
@@ -95,7 +103,7 @@ export const PLAYBOOKS: Playbook[] = [
     slug: "seasonal-menu-strategies",
     title: "Seasonal Menu Strategies",
     intro:
-      "Seasonality without chaos — increase perceived value, reduce waste, and create marketing moments while keeping execution simple.",
+      "Seasonality should increase revenue, not complexity. The goal is to create fresh reasons to visit, leverage seasonal ingredients and generate marketing opportunities — without disrupting operations or inventory control.",
     supportsLeak: "menu-profitability",
     sections: [
       {
@@ -105,6 +113,7 @@ export const PLAYBOOKS: Playbook[] = [
           "Weather seasonal: lighter in heat, richer in cold",
           "Occasion seasonal: holidays, events, local festivals",
           "Behavioural seasonal: school holidays, tourism peaks, footy season",
+          "Commercial seasonal: supplier surplus & discounting, favourable pricing, marketing cross-activation",
         ],
         body: "Pick 1–2 drivers so the menu doesn't feel random.",
       },
@@ -200,7 +209,7 @@ export const PLAYBOOKS: Playbook[] = [
     slug: "table-presentation",
     title: "Table Presentation Techniques",
     intro:
-      "A system that builds perceived value, improves flow, and increases add-ons — a consistent guest journey across the team.",
+      "Guests don't remember every detail of their meal, but they remember how the experience felt. Small improvements to table presentation, service flow and communication can increase guest satisfaction, encourage additional purchases and improve repeat visitation.",
     supportsLeak: "revenue-capping",
     sections: [
       {
