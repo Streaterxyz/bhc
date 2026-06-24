@@ -118,11 +118,19 @@ export function SupplierChecklist({
           </div>
         </section>
 
-        {/* Par-level note (deferred) */}
-        <p className="rounded-xl border border-dashed border-[color:var(--border-default)] px-4 py-3 text-sm text-fg-muted">
-          Par-Level Calculator — coming soon. It&apos;ll turn your usage data
-          into exact order quantities so you stop over-ordering.
-        </p>
+        {/* Par-level calculator entry */}
+        <a
+          href="/app/par-level"
+          className="flex items-center justify-between gap-4 rounded-xl border border-[color:var(--border-subtle)] bg-bg-elevated px-4 py-3.5 transition-colors hover:border-[color:var(--border-strong)]"
+        >
+          <span className="text-sm text-fg-secondary">
+            <span className="font-semibold text-fg-primary">Par-Level Calculator</span>{" "}
+            — turn usage data into exact order quantities so you stop over-ordering.
+          </span>
+          <span className="shrink-0 text-[0.65rem] uppercase tracking-[0.14em] text-fg-muted">
+            Open →
+          </span>
+        </a>
 
         {error && (
           <p role="alert" className="text-sm text-[#e0533f]">

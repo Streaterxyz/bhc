@@ -315,6 +315,27 @@ export default async function AppHome() {
         </div>
       </Link>
 
+      {/* Par-Level Calculator entry (inventory tool) */}
+      <Link
+        href="/app/par-level"
+        className="mt-3 flex items-center justify-between gap-4 rounded-xl border border-[color:var(--border-subtle)] bg-bg-elevated px-5 py-4 transition-colors hover:border-[color:var(--border-strong)]"
+      >
+        <div className="min-w-0">
+          <div className="mb-1 flex items-center gap-2.5">
+            <span className="text-[0.65rem] tracking-[0.14em] uppercase text-fg-muted">
+              Inventory
+            </span>
+          </div>
+          <h3 className="truncate text-base font-bold">Par-Level Calculator</h3>
+          <p className="mt-0.5 text-sm text-fg-tertiary">
+            Exact order quantities so you stop over-ordering — and stop running out
+          </p>
+        </div>
+        <span className="shrink-0 text-[0.65rem] uppercase tracking-[0.14em] text-fg-muted">
+          Open →
+        </span>
+      </Link>
+
       {/* Playbooks entry point */}
       <Link
         href="/app/playbooks"
