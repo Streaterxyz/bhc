@@ -14,6 +14,7 @@ export type ToolKey =
   | "roster"
   | "menu"
   | "supplier"
+  | "silent-upsell"
   | "playbooks";
 
 // Playbooks aren't monthly-versioned — one evolving record per lead under
