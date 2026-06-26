@@ -12,14 +12,14 @@ export const dynamic = "force-dynamic";
 export default async function SupplierPage() {
   // Entitlement enforced by app/app/layout.tsx.
   const session = await readLeadSession();
-  const profile = session ? await getVenueProfile(session.leadId) : null;
-  if (!profile) redirect("/app/onboarding");
+  if (!session) redirect("/training");
 
-  const existing = await getSnapshot(
-    session!.leadId,
-    "supplier",
-    getCurrentPeriodMonth(),
-  );
+  // profile + this month's snapshot are independent — fetch in parallel.
+  const [profile, existing] = await Promise.all([
+    getVenueProfile(session.leadId),
+    getSnapshot(session.leadId, "supplier", getCurrentPeriodMonth()),
+  ]);
+  if (!profile) redirect("/app/onboarding");
   const initial =
     (existing?.payload as { answers?: SupplierAnswers } | null)?.answers ??
     null;

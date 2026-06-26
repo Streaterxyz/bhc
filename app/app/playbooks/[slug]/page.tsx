@@ -24,15 +24,14 @@ export default async function PlaybookPage({
   if (!playbook) notFound();
 
   const session = await readLeadSession();
-  const profile = session ? await getVenueProfile(session.leadId) : null;
-  if (!profile) redirect("/app/onboarding");
+  if (!session) redirect("/training");
 
   // Global implemented set across all playbooks (so saving preserves others).
-  const snap = await getSnapshot(
-    session!.leadId,
-    "playbooks",
-    PLAYBOOKS_PERIOD,
-  );
+  const [profile, snap] = await Promise.all([
+    getVenueProfile(session.leadId),
+    getSnapshot(session.leadId, "playbooks", PLAYBOOKS_PERIOD),
+  ]);
+  if (!profile) redirect("/app/onboarding");
   const payload =
     (snap?.payload as {
       implemented?: string[];

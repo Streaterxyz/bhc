@@ -55,19 +55,26 @@ type LeakResult = {
 
 export default async function AppHome() {
   const session = await readLeadSession();
-  const profile = session ? await getVenueProfile(session.leadId) : null;
-  if (!profile) redirect("/app/onboarding");
+  if (!session) redirect("/training");
 
-  const diagnostic = await getLatestSnapshot(session!.leadId, "diagnostic");
+  // Both gate the page — fetch in parallel rather than one after the other.
+  const [profile, diagnostic] = await Promise.all([
+    getVenueProfile(session.leadId),
+    getLatestSnapshot(session.leadId, "diagnostic"),
+  ]);
+  if (!profile) redirect("/app/onboarding");
   // Forced front door: no diagnostic yet → run it first.
   if (!diagnostic) redirect("/app/diagnostic");
 
-  const figures = await getDashboardFigures(session!.leadId);
-  // Supplier is health-only (not a $-tool) — surface its reviewed state.
-  const supplierSnap = await getLatestSnapshot(session!.leadId, "supplier");
+  // Independent reads — one round-trip wave instead of three.
+  const [figures, supplierSnap, silentSnap] = await Promise.all([
+    getDashboardFigures(session.leadId),
+    // Supplier is health-only (not a $-tool) — surface its reviewed state.
+    getLatestSnapshot(session.leadId, "supplier"),
+    // Silent Upsell System — the bonus tool. Health-only, not a diagnostic leak.
+    getLatestSnapshot(session.leadId, "silent-upsell"),
+  ]);
   const supplierScore = supplierSnap?.healthScore ?? null;
-  // Silent Upsell System — the bonus tool. Health-only, not a diagnostic leak.
-  const silentSnap = await getLatestSnapshot(session!.leadId, "silent-upsell");
   const silentScore = silentSnap?.healthScore ?? null;
 
   const health = diagnostic.healthScore ?? 0;

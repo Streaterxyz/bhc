@@ -12,17 +12,16 @@ export const dynamic = "force-dynamic";
 export default async function RosterPage() {
   // Entitlement enforced by app/app/layout.tsx.
   const session = await readLeadSession();
-  const profile = session ? await getVenueProfile(session.leadId) : null;
+  if (!session) redirect("/training");
+
+  // profile + this month's snapshot are independent — fetch in parallel.
+  const [profile, existing] = await Promise.all([
+    getVenueProfile(session.leadId),
+    getSnapshot(session.leadId, "roster", getCurrentPeriodMonth()),
+  ]);
   if (!profile) redirect("/app/onboarding");
 
   const targetPct = profile.targetLabourPct ?? 28;
-
-  // Pre-fill from this month's snapshot, else seed with the venue's SPH.
-  const existing = await getSnapshot(
-    session!.leadId,
-    "roster",
-    getCurrentPeriodMonth(),
-  );
   const savedDays =
     (existing?.payload as { days?: DayInput[] } | null)?.days ?? null;
   const initialDays = savedDays ?? emptyDays(profile.avgSpendPerHead ?? 0);

@@ -17,14 +17,14 @@ export const dynamic = "force-dynamic";
 export default async function MenuPage() {
   // Entitlement enforced by app/app/layout.tsx.
   const session = await readLeadSession();
-  const profile = session ? await getVenueProfile(session.leadId) : null;
-  if (!profile) redirect("/app/onboarding");
+  if (!session) redirect("/training");
 
-  const existing = await getSnapshot(
-    session!.leadId,
-    "menu",
-    getCurrentPeriodMonth(),
-  );
+  // profile + this month's snapshot are independent — fetch in parallel.
+  const [profile, existing] = await Promise.all([
+    getVenueProfile(session.leadId),
+    getSnapshot(session.leadId, "menu", getCurrentPeriodMonth()),
+  ]);
+  if (!profile) redirect("/app/onboarding");
   const saved = existing?.payload as
     | { items?: MenuItem[]; targetGpPct?: number }
     | null;

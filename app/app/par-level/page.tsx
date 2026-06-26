@@ -12,10 +12,13 @@ export const dynamic = "force-dynamic";
 export default async function ParLevelPage() {
   // Entitlement enforced by app/app/layout.tsx.
   const session = await readLeadSession();
-  const profile = session ? await getVenueProfile(session.leadId) : null;
-  if (!profile) redirect("/app/onboarding");
+  if (!session) redirect("/training");
 
-  const snap = await getSnapshot(session!.leadId, "par-level", "all");
+  const [profile, snap] = await Promise.all([
+    getVenueProfile(session.leadId),
+    getSnapshot(session.leadId, "par-level", "all"),
+  ]);
+  if (!profile) redirect("/app/onboarding");
   const saved =
     (snap?.payload as { lines?: ParLevelInput[] } | null)?.lines ?? [];
   const initial = saved.map((line, i) => ({ ...line, id: `saved_${i}` }));

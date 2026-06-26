@@ -15,16 +15,16 @@ export const dynamic = "force-dynamic";
 export default async function DiagnosticPage() {
   // Entitlement enforced by app/app/layout.tsx.
   const session = await readLeadSession();
-  const profile = session ? await getVenueProfile(session.leadId) : null;
+  if (!session) redirect("/training");
+
+  // Venue profile + this month's snapshot are independent — fetch in parallel.
+  // (Pre-fill from the snapshot if it exists; the diagnostic is re-runnable.)
+  const [profile, existing] = await Promise.all([
+    getVenueProfile(session.leadId),
+    getSnapshot(session.leadId, "diagnostic", getCurrentPeriodMonth()),
+  ]);
   // Need a venue profile first.
   if (!profile) redirect("/app/onboarding");
-
-  // Pre-fill from this month's snapshot if it exists (re-runnable/editable).
-  const existing = await getSnapshot(
-    session!.leadId,
-    "diagnostic",
-    getCurrentPeriodMonth(),
-  );
   const initial =
     (existing?.payload as { answers?: DiagnosticAnswers } | null)?.answers ??
     null;

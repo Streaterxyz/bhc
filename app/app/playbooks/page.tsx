@@ -10,14 +10,13 @@ export const dynamic = "force-dynamic";
 
 export default async function PlaybooksIndex() {
   const session = await readLeadSession();
-  const profile = session ? await getVenueProfile(session.leadId) : null;
-  if (!profile) redirect("/app/onboarding");
+  if (!session) redirect("/training");
 
-  const snap = await getSnapshot(
-    session!.leadId,
-    "playbooks",
-    PLAYBOOKS_PERIOD,
-  );
+  const [profile, snap] = await Promise.all([
+    getVenueProfile(session.leadId),
+    getSnapshot(session.leadId, "playbooks", PLAYBOOKS_PERIOD),
+  ]);
+  if (!profile) redirect("/app/onboarding");
   const implemented = new Set(
     (snap?.payload as { implemented?: string[] } | null)?.implemented ?? [],
   );
