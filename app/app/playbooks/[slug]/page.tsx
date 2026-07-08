@@ -42,12 +42,23 @@ export default async function PlaybookPage({
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-10 lg:py-14">
-      <Link
-        href="/app/playbooks"
-        className="mb-8 inline-flex items-center gap-2 text-xs tracking-[0.16em] uppercase text-fg-tertiary hover:text-[color:var(--accent)] transition-colors"
-      >
-        <span aria-hidden>←</span> All playbooks
-      </Link>
+      <nav className="mb-8 flex items-center gap-3 text-xs tracking-[0.16em] uppercase text-fg-tertiary">
+        <Link
+          href="/app"
+          className="inline-flex items-center gap-2 hover:text-[color:var(--accent)] transition-colors"
+        >
+          <span aria-hidden>←</span> Dashboard
+        </Link>
+        <span aria-hidden className="text-fg-muted">
+          /
+        </span>
+        <Link
+          href="/app/playbooks"
+          className="hover:text-[color:var(--accent)] transition-colors"
+        >
+          All playbooks
+        </Link>
+      </nav>
 
       <p className="mb-3 text-[0.7rem] tracking-[0.22em] uppercase text-[color:var(--accent)] font-semibold">
         Playbook

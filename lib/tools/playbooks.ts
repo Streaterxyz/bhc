@@ -21,13 +21,25 @@ export type PlaybookSection = {
  * when `fields` is present, an interactive worksheet: the customer writes
  * their venue's own answers into one input per field label. Each field
  * string is the guiding prompt/placeholder for that input.
+ *
+ * A field can instead be `computed` — a read-only cell the tool fills in from
+ * other fields (e.g. max covers = seats × turns), so the customer never does
+ * the maths by hand.
  */
+export type PlaybookField =
+  | string
+  | {
+      /** Field label / prompt. */
+      label: string;
+      /** Auto-calculated, read-only: the product of two other fields, by index. */
+      computed: { product: [number, number] };
+    };
 export type PlaybookAction = {
   id: string;
   label: string;
   /** Optional supporting line shown under the label (e.g. the expected impact). */
   detail?: string;
-  fields?: string[];
+  fields?: PlaybookField[];
 };
 export type PlaybookScript = { context: string; script: string };
 
@@ -308,7 +320,10 @@ export const PLAYBOOKS: Playbook[] = [
         fields: [
           "Seats available",
           "Expected table turns per service",
-          "Max covers per service (seats × turns)",
+          {
+            label: "Max covers per service (seats × turns)",
+            computed: { product: [0, 1] },
+          },
         ],
       },
       {

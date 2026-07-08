@@ -13,9 +13,29 @@
 
 import { useRef, useState } from "react";
 
-import type { PlaybookAction } from "@/lib/tools/playbooks";
+import type { PlaybookAction, PlaybookField } from "@/lib/tools/playbooks";
 
 type Entries = Record<string, string[]>;
+
+function fieldLabel(f: PlaybookField): string {
+  return typeof f === "string" ? f : f.label;
+}
+function isComputed(
+  f: PlaybookField,
+): f is Extract<PlaybookField, { computed: unknown }> {
+  return typeof f !== "string" && "computed" in f;
+}
+/** Live value of a computed cell (read-only). Empty until its inputs are numbers. */
+function computeProduct(
+  spec: { product: [number, number] },
+  arr: string[],
+): string {
+  const a = parseFloat(arr[spec.product[0]] ?? "");
+  const b = parseFloat(arr[spec.product[1]] ?? "");
+  if (!isFinite(a) || !isFinite(b)) return "";
+  const v = a * b;
+  return Number.isInteger(v) ? String(v) : String(Math.round(v * 100) / 100);
+}
 
 export function PlaybookActions({
   actions,
@@ -68,11 +88,16 @@ export function PlaybookActions({
     });
   }
 
-  function setField(actionId: string, idx: number, value: string, count: number) {
+  function setField(action: PlaybookAction, idx: number, value: string) {
+    const fields = action.fields!;
     setEntries((prev) => {
-      const arr = (prev[actionId] ?? new Array(count).fill("")).slice();
+      const arr = (prev[action.id] ?? new Array(fields.length).fill("")).slice();
       arr[idx] = value;
-      const next = { ...prev, [actionId]: arr };
+      // Fill in any derived cells so saved data stays consistent.
+      fields.forEach((f, k) => {
+        if (isComputed(f)) arr[k] = computeProduct(f.computed, arr);
+      });
+      const next = { ...prev, [action.id]: arr };
       persistDebounced(implemented, next); // debounced for typing
       return next;
     });
@@ -135,22 +160,35 @@ export function PlaybookActions({
 
               {hasFields && (
                 <div className="space-y-2 border-t border-[color:var(--border-subtle)] bg-bg-base/40 px-4 py-3 pl-12">
-                  {a.fields!.map((label, i) => (
-                    <div key={i}>
-                      <label className="mb-1 block text-[0.65rem] tracking-[0.12em] uppercase text-fg-muted">
-                        {label}
-                      </label>
-                      <textarea
-                        rows={1}
-                        value={entries[a.id]?.[i] ?? ""}
-                        onChange={(e) =>
-                          setField(a.id, i, e.target.value, a.fields!.length)
-                        }
-                        placeholder="Write your venue's answer…"
-                        className="w-full resize-y rounded-lg border border-[color:var(--border-subtle)] bg-bg-base px-3 py-2 text-sm text-fg-primary placeholder:text-fg-muted focus:border-[color:var(--accent)] focus:outline-none"
-                      />
-                    </div>
-                  ))}
+                  {a.fields!.map((f, i) => {
+                    const computed = isComputed(f);
+                    const value = computed
+                      ? computeProduct(f.computed, entries[a.id] ?? [])
+                      : entries[a.id]?.[i] ?? "";
+                    return (
+                      <div key={i}>
+                        <label className="mb-1 block text-[0.65rem] tracking-[0.12em] uppercase text-fg-muted">
+                          {fieldLabel(f)}
+                        </label>
+                        {computed ? (
+                          <div
+                            aria-live="polite"
+                            className="w-full rounded-lg border border-[color:var(--border-subtle)] bg-bg-base/60 px-3 py-2 text-sm font-semibold tabular-nums text-[color:var(--accent)]"
+                          >
+                            {value || "—"}
+                          </div>
+                        ) : (
+                          <textarea
+                            rows={1}
+                            value={value}
+                            onChange={(e) => setField(a, i, e.target.value)}
+                            placeholder="Write your venue's answer…"
+                            className="w-full resize-y rounded-lg border border-[color:var(--border-subtle)] bg-bg-base px-3 py-2 text-sm text-fg-primary placeholder:text-fg-muted focus:border-[color:var(--accent)] focus:outline-none"
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </li>
