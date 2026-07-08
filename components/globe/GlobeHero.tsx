@@ -31,7 +31,7 @@ export function GlobeHero() {
           leaving the upper map area free for pan/pinch/pin-tap gestures.
           From md (>=768px) up, the touch-action override is dropped so the
           map remains fully interactive across the whole hero on desktop. */}
-      <div className="pointer-events-none absolute inset-0 z-20 flex flex-col justify-end p-6 lg:p-12 pb-24 lg:pb-32">
+      <div className="hero-copy-overlay pointer-events-none absolute inset-0 z-20 flex flex-col justify-end p-6 lg:p-12 pb-24 lg:pb-32">
         <div className="max-w-[1440px] mx-auto w-full">
           <motion.div
             initial={{ opacity: 0, y: 24 }}

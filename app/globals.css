@@ -152,6 +152,30 @@ html {
   }
 }
 
+/* Short viewports (≈1366×768 laptops, landscape tablets, split/zoomed windows):
+   the bottom-anchored hero copy (GlobeHero) grows upward when it can't fit in
+   100dvh — sliding under the fixed transparent header and clipping the eyebrow.
+   Shrink the headline + trim the hero's bottom padding so the block stays within
+   the viewport. Tall screens are unaffected. Height-based, so it composes with
+   the width-based scale above. */
+@media (max-height: 740px) {
+  .display-hero {
+    font-size: clamp(1.8rem, 5.5vw, 3.25rem);
+    line-height: 1;
+  }
+  .hero-copy-overlay {
+    padding-bottom: 4rem;
+  }
+}
+@media (max-height: 560px) {
+  .display-hero {
+    font-size: clamp(1.5rem, 5vw, 2.25rem);
+  }
+  .hero-copy-overlay {
+    padding-bottom: 2.5rem;
+  }
+}
+
 .headline {
   font-weight: 800;
   font-size: clamp(2.25rem, 4.5vw, 3.5rem);
