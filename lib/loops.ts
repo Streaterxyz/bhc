@@ -60,6 +60,32 @@ export async function loopsUpsertContact(
 }
 
 /**
+ * Look up a contact by email. Returns the contact record or null (not found /
+ * unconfigured / error). Used to initialise-but-never-clobber lifecycle
+ * properties: Loops audience filters treat a MISSING property as "no match",
+ * so booleans like trainingCompleted must exist (false) on every contact —
+ * but a re-signup must not reset a completer's true back to false.
+ */
+export async function loopsFindContact(
+  email: string,
+): Promise<Record<string, unknown> | null> {
+  const key = process.env.LOOPS_API_KEY;
+  if (!key) return null;
+  try {
+    const res = await fetch(
+      `${BASE}/contacts/find?email=${encodeURIComponent(email)}`,
+      { headers: { Authorization: `Bearer ${key}` } },
+    );
+    if (!res.ok) return null;
+    const data = (await res.json()) as unknown;
+    return Array.isArray(data) && data[0] ? (data[0] as Record<string, unknown>) : null;
+  } catch (err) {
+    console.error("[loops] GET /contacts/find threw:", err);
+    return null;
+  }
+}
+
+/**
  * Fire an event Loops can trigger / branch sequences off. `properties` become
  * event properties usable in Loops conditions.
  */

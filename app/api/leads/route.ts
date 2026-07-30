@@ -15,7 +15,11 @@ import { upsertLead, isValidEmail, normalizeEmail } from "@/lib/leads";
 import { isDisposableEmail } from "@/lib/email-validation";
 import { setLeadCookie } from "@/lib/auth/cookie";
 import { verifyTurnstile } from "@/lib/turnstile";
-import { loopsUpsertContact, loopsTrackEvent } from "@/lib/loops";
+import {
+  loopsFindContact,
+  loopsUpsertContact,
+  loopsTrackEvent,
+} from "@/lib/loops";
 
 export const runtime = "nodejs";
 
@@ -110,9 +114,17 @@ export async function POST(req: NextRequest) {
     // Marketing nurture sync (best-effort — never blocks or fails the
     // signup). Resend handles transactional mail; Loops branches sequences
     // off the `signed_up` event + contact properties.
+    // Initialise trainingCompleted:false on first sight of the contact —
+    // Loops audience filters can't match a missing property, so it must
+    // exist on everyone. Never overwrite an existing value (a returning
+    // completer must keep true).
+    const loopsContact = await loopsFindContact(lead.email);
     await loopsUpsertContact(lead.email, {
       firstName: lead.name ?? undefined,
       source: lead.source ?? "training",
+      ...(loopsContact?.trainingCompleted == null
+        ? { trainingCompleted: false }
+        : {}),
     });
     await loopsTrackEvent(lead.email, "signed_up", {
       source: lead.source ?? "training",
