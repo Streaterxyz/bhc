@@ -31,6 +31,7 @@ import { eq } from "drizzle-orm";
 import { readLeadSession } from "@/lib/auth/cookie";
 import { getLeadById } from "@/lib/leads";
 import { getStripe, getGstTaxRateId, TOOLKIT_PRODUCT } from "@/lib/stripe/client";
+import { loopsTrackEvent } from "@/lib/loops";
 import type Stripe from "stripe";
 
 export const runtime = "nodejs";
@@ -205,6 +206,13 @@ export async function POST(req: Request) {
       .update(purchases)
       .set({ stripeCustomerId: customer.id })
       .where(eq(purchases.id, purchase.id));
+
+    // Nurture signal: lets Loops run an abandoned-checkout sequence (loops
+    // exit on `purchased`). Best-effort + env-gated — never blocks checkout.
+    await loopsTrackEvent(lead.email, "started_checkout", {
+      productId: TOOLKIT_PRODUCT.id,
+      amountCents,
+    });
 
     return NextResponse.json({
       ok: true,
