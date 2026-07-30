@@ -15,7 +15,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { db } from "@/lib/db/client";
 import { videoEvents } from "@/lib/db/schema";
 import { readLeadSession, clearLeadCookie } from "@/lib/auth/cookie";
-import { loopsTrackEvent } from "@/lib/loops";
+import { loopsTrackEvent, loopsUpsertContact } from "@/lib/loops";
 
 export const runtime = "nodejs";
 
@@ -89,6 +89,9 @@ export async function POST(req: NextRequest) {
     // Strong buy-signal → let Loops trigger a post-training follow-up
     // sequence. Best-effort; never affects the telemetry response.
     if (eventType === "complete") {
+      // Property + event: the property lets Loops workflows branch/filter on
+      // completion state (events alone can't be used in audience conditions).
+      await loopsUpsertContact(session.email, { trainingCompleted: true });
       await loopsTrackEvent(session.email, "completed_training");
     }
 
