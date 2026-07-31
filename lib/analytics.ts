@@ -48,3 +48,19 @@ export function identifyLead(
   if (!ready()) return;
   posthog.identify(email, { email, ...properties });
 }
+
+/**
+ * Fire a Meta Pixel event (browser side). No-op when the pixel isn't loaded
+ * (NEXT_PUBLIC_META_PIXEL_ID unset). Pass the same eventId to the matching
+ * server-side CAPI call (lib/meta.ts) so Meta dedups the browser/server pair.
+ */
+export function metaTrack(
+  event: string,
+  params?: Record<string, unknown>,
+  eventId?: string,
+): void {
+  if (typeof window === "undefined") return;
+  const fbq = (window as { fbq?: (...args: unknown[]) => void }).fbq;
+  if (!fbq) return;
+  fbq("track", event, params ?? {}, eventId ? { eventID: eventId } : undefined);
+}

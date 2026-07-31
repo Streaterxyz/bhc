@@ -16,6 +16,7 @@ import { db } from "@/lib/db/client";
 import { videoEvents } from "@/lib/db/schema";
 import { readLeadSession, clearLeadCookie } from "@/lib/auth/cookie";
 import { loopsTrackEvent, loopsUpsertContact } from "@/lib/loops";
+import { metaRequestContext, sendMetaEvent } from "@/lib/meta";
 
 export const runtime = "nodejs";
 
@@ -93,6 +94,14 @@ export async function POST(req: NextRequest) {
       // completion state (events alone can't be used in audience conditions).
       await loopsUpsertContact(session.email, { trainingCompleted: true });
       await loopsTrackEvent(session.email, "completed_training");
+      // Meta custom event — the ad-optimisation signal while purchase volume
+      // is low. Lead-id-keyed event id → idempotent across repeat completes.
+      await sendMetaEvent({
+        eventName: "CompletedTraining",
+        eventId: `training-${session.leadId}`,
+        email: session.email,
+        ...metaRequestContext(req),
+      });
     }
 
     return NextResponse.json({ ok: true });

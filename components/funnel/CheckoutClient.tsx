@@ -14,6 +14,7 @@ import { loadStripe, type Stripe } from "@stripe/stripe-js";
 import { Elements } from "@stripe/react-stripe-js";
 
 import { CheckoutForm } from "./CheckoutForm";
+import { metaTrack } from "@/lib/analytics";
 
 const PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
 const ANCHOR_PRICE = 149;
@@ -87,21 +88,33 @@ export function CheckoutClient({ returnUrl }: Props) {
   async function startPayment() {
     setStarting(true);
     setError(null);
+    // Shared with the server's CAPI InitiateCheckout so Meta dedups the pair.
+    const metaEventId = crypto.randomUUID();
     try {
       const business = isBusiness && biz.name.trim() ? biz : undefined;
       const res = await fetch("/api/checkout/intent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ business }),
+        body: JSON.stringify({ business, metaEventId }),
       });
       const data = (await res.json()) as {
         clientSecret?: string;
+        amountCents?: number;
+        currency?: string;
         error?: string;
       };
       if (!res.ok || !data.clientSecret) {
         setError(data.error ?? "Could not start checkout.");
         return;
       }
+      metaTrack(
+        "InitiateCheckout",
+        {
+          value: (data.amountCents ?? 8900) / 100,
+          currency: (data.currency ?? "aud").toUpperCase(),
+        },
+        metaEventId,
+      );
       setClientSecret(data.clientSecret);
     } catch {
       setError("Network error. Please refresh and try again.");

@@ -32,6 +32,9 @@ import { readLeadSession } from "@/lib/auth/cookie";
 import { getLeadById } from "@/lib/leads";
 import { getStripe, getGstTaxRateId, TOOLKIT_PRODUCT } from "@/lib/stripe/client";
 import { loopsTrackEvent } from "@/lib/loops";
+import { metaRequestContext, sendMetaEvent } from "@/lib/meta";
+import { leads } from "@/lib/db/schema";
+import { sql } from "drizzle-orm";
 import type Stripe from "stripe";
 
 export const runtime = "nodejs";
@@ -212,6 +215,39 @@ export async function POST(req: Request) {
     await loopsTrackEvent(lead.email, "started_checkout", {
       productId: TOOLKIT_PRODUCT.id,
       amountCents,
+    });
+
+    // Meta CAPI InitiateCheckout (mirrors the browser pixel; shared event
+    // id → dedup) + refresh the stashed _fbp/_fbc on the lead — these are
+    // the freshest ad-click cookies before the webhook's Purchase event,
+    // which has no browser context. Best-effort.
+    const meta = metaRequestContext(req);
+    if (meta.fbp || meta.fbc) {
+      try {
+        await db
+          .update(leads)
+          .set({
+            meta: sql`coalesce(${leads.meta}, '{}'::jsonb) || ${JSON.stringify(
+              { fbp: meta.fbp ?? undefined, fbc: meta.fbc ?? undefined },
+            )}::jsonb`,
+          })
+          .where(eq(leads.id, lead.id));
+      } catch (err) {
+        console.error("[/api/checkout/intent] meta cookie stash failed:", err);
+      }
+    }
+    const metaEventId =
+      typeof (body as { metaEventId?: unknown })?.metaEventId === "string"
+        ? ((body as { metaEventId?: string }).metaEventId as string)
+        : crypto.randomUUID();
+    await sendMetaEvent({
+      eventName: "InitiateCheckout",
+      eventId: metaEventId,
+      email: lead.email,
+      sourceUrl: req.headers.get("referer"),
+      value: amountCents / 100,
+      currency,
+      ...meta,
     });
 
     return NextResponse.json({

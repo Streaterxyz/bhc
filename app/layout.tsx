@@ -4,6 +4,7 @@ import { GoogleAnalytics } from "@next/third-parties/google";
 import "./globals.css";
 import { BookCallProvider } from "@/components/calendly/BookCallProvider";
 import { PostHogProvider } from "@/components/analytics/PostHogProvider";
+import { MetaPixel } from "@/components/analytics/MetaPixel";
 
 // Env-gated GA4: only loads when NEXT_PUBLIC_GA_ID is set, so local dev /
 // preview builds stay analytics-free unless explicitly configured.
@@ -60,6 +61,7 @@ export default function RootLayout({
         </PostHogProvider>
       </body>
       {GA_ID ? <GoogleAnalytics gaId={GA_ID} /> : null}
+      <MetaPixel />
     </html>
   );
 }

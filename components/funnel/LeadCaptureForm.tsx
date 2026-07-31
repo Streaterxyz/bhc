@@ -14,7 +14,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 
-import { capture, identifyLead, EVENTS } from "@/lib/analytics";
+import { capture, identifyLead, metaTrack, EVENTS } from "@/lib/analytics";
 import { suggestEmailCorrection } from "@/lib/email-validation";
 
 const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
@@ -89,6 +89,10 @@ export function LeadCaptureForm() {
       if (v) utm[key] = v;
     }
 
+    // Shared with the server's CAPI mirror of the Lead event so Meta dedups
+    // the browser/server pair.
+    const metaEventId = crypto.randomUUID();
+
     try {
       const res = await fetch("/api/leads", {
         method: "POST",
@@ -99,6 +103,7 @@ export function LeadCaptureForm() {
           source: "training",
           turnstileToken,
           utm,
+          metaEventId,
           landingPage:
             typeof window !== "undefined" ? window.location.pathname : null,
           referrer:
@@ -127,6 +132,7 @@ export function LeadCaptureForm() {
       // identified_only profiles).
       identifyLead(email, { name: name || undefined, ...utm });
       capture(EVENTS.LEAD_CAPTURED, { source: "training" });
+      metaTrack("Lead", { content_name: "free-training" }, metaEventId);
 
       // Cookie is set server-side; re-render the page into its
       // authenticated (video) state.

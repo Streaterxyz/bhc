@@ -40,6 +40,7 @@ import { signMagicToken } from "@/lib/auth/magic";
 import { sendEmail } from "@/lib/email/resend";
 import { receiptEmail } from "@/lib/email/templates";
 import { loopsUpsertContact, loopsTrackEvent } from "@/lib/loops";
+import { sendMetaEvent } from "@/lib/meta";
 
 function siteOrigin(): string {
   return (process.env.NEXT_PUBLIC_SITE_URL ?? "https://brendonhill.co").replace(
@@ -80,7 +81,11 @@ async function sendAccessEmail(leadId: string | undefined, amountCents: number) 
  * customer lifecycle in Loops (so the sales nurture stops and onboarding can
  * start). Never throws — Loops being down must not 500 the webhook.
  */
-async function trackPurchase(leadId: string | undefined, amountCents: number) {
+async function trackPurchase(
+  leadId: string | undefined,
+  amountCents: number,
+  purchaseId?: string,
+) {
   if (!leadId) return;
   try {
     const lead = await getLeadById(leadId);
@@ -90,8 +95,23 @@ async function trackPurchase(leadId: string | undefined, amountCents: number) {
       product: TOOLKIT_PRODUCT.id,
       amount: amountCents / 100,
     });
+
+    // Meta CAPI Purchase — server-only (webhooks have no browser context),
+    // so no pixel twin to dedup against; the purchase id keeps the event id
+    // stable across webhook re-deliveries. _fbp/_fbc were stashed on the
+    // lead at signup/checkout for match quality.
+    const stash = (lead.meta ?? {}) as { fbp?: string; fbc?: string };
+    await sendMetaEvent({
+      eventName: "Purchase",
+      eventId: purchaseId ? `purchase-${purchaseId}` : crypto.randomUUID(),
+      email: lead.email,
+      value: amountCents / 100,
+      currency: TOOLKIT_PRODUCT.currency,
+      fbp: stash.fbp ?? null,
+      fbc: stash.fbc ?? null,
+    });
   } catch (err) {
-    console.error("[stripe webhook] loops purchase sync failed:", err);
+    console.error("[stripe webhook] purchase marketing sync failed:", err);
   }
 }
 
@@ -185,7 +205,7 @@ export async function POST(req: Request) {
 
         const leadId = inv.metadata?.leadId;
         await sendAccessEmail(leadId, inv.amount_paid);
-        await trackPurchase(leadId, inv.amount_paid);
+        await trackPurchase(leadId, inv.amount_paid, purchaseId);
         break;
       }
 

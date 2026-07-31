@@ -11,6 +11,10 @@
 
 import { NextResponse, type NextRequest } from "next/server";
 
+import { eq, sql } from "drizzle-orm";
+
+import { db } from "@/lib/db/client";
+import { leads } from "@/lib/db/schema";
 import { upsertLead, isValidEmail, normalizeEmail } from "@/lib/leads";
 import { isDisposableEmail } from "@/lib/email-validation";
 import { setLeadCookie } from "@/lib/auth/cookie";
@@ -20,6 +24,7 @@ import {
   loopsUpsertContact,
   loopsTrackEvent,
 } from "@/lib/loops";
+import { metaRequestContext, sendMetaEvent } from "@/lib/meta";
 
 export const runtime = "nodejs";
 
@@ -31,6 +36,7 @@ type Body = {
   utm?: Record<string, string | undefined>;
   landingPage?: unknown;
   referrer?: unknown;
+  metaEventId?: unknown;
 };
 
 function asString(v: unknown): string | null {
@@ -130,6 +136,33 @@ export async function POST(req: NextRequest) {
       source: lead.source ?? "training",
       utmSource: lead.utmSource ?? undefined,
       utmCampaign: lead.utmCampaign ?? undefined,
+    });
+
+    // Meta CAPI Lead — mirrors the browser pixel's Lead (shared event id →
+    // dedup). Also stash the Meta browser cookies on the lead so the
+    // Purchase event from the Stripe webhook (no browser context) can carry
+    // them for match quality. Best-effort.
+    const meta = metaRequestContext(req);
+    if (meta.fbp || meta.fbc) {
+      try {
+        await db
+          .update(leads)
+          .set({
+            meta: sql`coalesce(${leads.meta}, '{}'::jsonb) || ${JSON.stringify(
+              { fbp: meta.fbp ?? undefined, fbc: meta.fbc ?? undefined },
+            )}::jsonb`,
+          })
+          .where(eq(leads.id, lead.id));
+      } catch (err) {
+        console.error("[/api/leads] meta cookie stash failed:", err);
+      }
+    }
+    await sendMetaEvent({
+      eventName: "Lead",
+      eventId: asString(body.metaEventId) ?? crypto.randomUUID(),
+      email: lead.email,
+      sourceUrl: req.headers.get("referer"),
+      ...meta,
     });
 
     return NextResponse.json({ ok: true, leadId: lead.id });
