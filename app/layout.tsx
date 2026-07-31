@@ -46,6 +46,11 @@ export const metadata: Metadata = {
     description: "Everything Elevated. No Exceptions.",
   },
   // Favicon is auto-detected from app/icon.svg by Next.js.
+  // Meta (Facebook) Business Manager domain verification — must render in
+  // <head> as static HTML for their crawler.
+  other: {
+    "facebook-domain-verification": "oz1gei7a9uydbylvrycw5ffhchbn54",
+  },
 };
 
 export default function RootLayout({
