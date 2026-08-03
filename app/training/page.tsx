@@ -132,7 +132,7 @@ function GatedView() {
         <div className="border-t border-[color:var(--border-subtle)] pt-6 space-y-4 max-w-xl">
           <p className="text-sm text-fg-secondary">
             <span className="text-fg-primary font-semibold">
-              The exact systems used across 50+ venues
+              The exact systems used across 100+ venues
             </span>{" "}
             to bank millions in extra profit — including one that went from{" "}
             <span className="text-fg-primary font-semibold">
