@@ -11,9 +11,9 @@ type Testimonial = {
 const TESTIMONIALS: Testimonial[] = [
   {
     quote:
-      "BHC has been a genuinely valuable partner for Sonnel Group. Their hands-on approach has elevated our service standards, grown beverage sales, and built operational systems our teams can actually follow. Reliable, proactive, and genuinely invested in our success.",
-    name: "Jacqui Corbett",
-    role: "General Manager Operations · Sonnel Group",
+      "BHC has been a genuinely valuable partner for our group. Their hands-on approach has elevated our service standards, grown beverage sales, and built operational systems our teams can actually follow. Reliable, proactive, and genuinely invested in our success.",
+    name: "Jacqui",
+    role: "General Manager Operations · Sydney Pub Group",
   },
   {
     quote:

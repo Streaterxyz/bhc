@@ -146,12 +146,13 @@ export const projects: Project[] = [
   },
 
   // ─────────────────────────────────────────────────────────────────
-  // 2 — Crossroads Hotel (Casula)
+  // 2 — Western Sydney Hotel (Casula) — anonymised case study; the venue
+  //     is not named anywhere on the site at the client's request.
   // ─────────────────────────────────────────────────────────────────
   {
-    slug: "crossroads-hotel",
-    name: "Crossroads Hotel",
-    client: "Sonnel Hospitality",
+    slug: "western-sydney-hotel",
+    name: "Western Sydney Hotel",
+    client: "Sydney Pub Group",
     type: "hotel",
     coords: [150.91, -33.952],
     suburb: "Casula",
@@ -167,12 +168,11 @@ export const projects: Project[] = [
       "beverage",
       "concept",
     ],
-    website: "https://crossroadshotel.com.au/",
     featured: true,
     headline:
-      "Elevating Crossroads Hotel into a food and beverage-led hospitality destination through strategic menu development, team training and guest experience innovation.",
+      "Elevating a major Western Sydney hotel into a food and beverage-led hospitality destination through strategic menu development, team training and guest experience innovation.",
     summary:
-      "Partnered with Crossroads Hotel to transform beverage operations, increase profitability, improve service delivery and create destination-worthy guest experiences through strategy, training and commercial beverage development.",
+      "Partnered with a leading Western Sydney hotel to transform beverage operations, increase profitability, improve service delivery and create destination-worthy guest experiences through strategy, training and commercial beverage development.",
     pillars: [
       {
         title: "Commercial Growth",
@@ -188,20 +188,22 @@ export const projects: Project[] = [
       },
     ],
     challenge:
-      "Crossroads Hotel had undergone significant investment and redevelopment, positioning itself as one of South-West Sydney's largest hospitality destinations.\n\nWith multiple revenue streams including bars, dining, accommodation, functions and entertainment, the venue required a more sophisticated beverage strategy that aligned with the scale of the operation and the expectations of modern hospitality guests.\n\nWhile the venue already had strong foundations, there was an opportunity to further elevate beverage performance, improve team capability, simplify operational execution and create unique guest experiences that would differentiate Crossroads within a highly competitive market.",
+      "The hotel had undergone significant investment and redevelopment, positioning itself as one of South-West Sydney's largest hospitality destinations.\n\nWith multiple revenue streams including bars, dining, accommodation, functions and entertainment, the venue required a more sophisticated beverage strategy that aligned with the scale of the operation and the expectations of modern hospitality guests.\n\nWhile the venue already had strong foundations, there was an opportunity to further elevate beverage performance, improve team capability, simplify operational execution and create unique guest experiences that would differentiate the venue within a highly competitive market.",
     approach:
-      "BHC worked closely with venue leadership to build a beverage and guest experience strategy designed to drive both commercial performance and customer engagement.\n\nThe project focused on several key areas: beverage menu engineering and profitability analysis, development of signature cocktail programs, seasonal menu creation and activation planning, service and sales training for front-of-house teams, beverage knowledge and upselling programs, operational workflow reviews, the creation of destination-focused beverage experiences and ongoing coaching for venue leadership.\n\nA key focus was ensuring every beverage offering served a commercial purpose while remaining approachable and relevant to the Crossroads guest demographic. Menus were simplified where required, high-margin opportunities were identified and the team was equipped with the tools and confidence needed to consistently deliver elevated service experiences.",
+      "BHC worked closely with venue leadership to build a beverage and guest experience strategy designed to drive both commercial performance and customer engagement.\n\nThe project focused on several key areas: beverage menu engineering and profitability analysis, development of signature cocktail programs, seasonal menu creation and activation planning, service and sales training for front-of-house teams, beverage knowledge and upselling programs, operational workflow reviews, the creation of destination-focused beverage experiences and ongoing coaching for venue leadership.\n\nA key focus was ensuring every beverage offering served a commercial purpose while remaining approachable and relevant to the venue's guest demographic. Menus were simplified where required, high-margin opportunities were identified and the team was equipped with the tools and confidence needed to consistently deliver elevated service experiences.",
     outcome:
-      "Crossroads Hotel now operates with a more commercially focused beverage program supported by stronger team capability and improved guest engagement: increased beverage profitability through strategic menu optimisation, improved beverage mix and sales performance, stronger staff confidence in beverage recommendations and upselling, more efficient service execution, successful seasonal activations and signature beverage experiences, increased repeat visitation and greater alignment between venue operations, marketing and commercial objectives.\n\nToday, Crossroads Hotel continues to strengthen its position as one of South-West Sydney's leading hospitality destinations, with a beverage program designed to support both exceptional guest experiences and sustainable commercial performance.",
+      "The hotel now operates with a more commercially focused beverage program supported by stronger team capability and improved guest engagement: increased beverage profitability through strategic menu optimisation, improved beverage mix and sales performance, stronger staff confidence in beverage recommendations and upselling, more efficient service execution, successful seasonal activations and signature beverage experiences, increased repeat visitation and greater alignment between venue operations, marketing and commercial objectives.\n\nToday, the venue continues to strengthen its position as one of South-West Sydney's leading hospitality destinations, with a beverage program designed to support both exceptional guest experiences and sustainable commercial performance.",
   },
 
   // ─────────────────────────────────────────────────────────────────
-  // 3 — Sonnel Group (19 venues, HQ Burwood)
+  // 3 — Sydney Pub Group (19 venues, HQ Burwood) — anonymised case
+  //     study; the group is not named anywhere on the site at the
+  //     client's request.
   // ─────────────────────────────────────────────────────────────────
   {
-    slug: "sonnel",
-    name: "Sonnel",
-    client: "Sonnel Hospitality Group",
+    slug: "sydney-pub-group",
+    name: "Sydney Pub Group",
+    client: "Sydney Pub Group",
     type: "venue-group",
     coords: [151.103, -33.878],
     suburb: "Burwood",
@@ -215,12 +217,11 @@ export const projects: Project[] = [
       "financial",
       "experience",
     ],
-    website: "https://sonnel.com.au/",
     featured: true,
     headline:
       "Building group-wide hospitality standards, beverage strategy and operational excellence across a portfolio of leading hospitality venues.",
     summary:
-      "Partnered with Sonnel Hospitality Group to establish scalable hospitality systems, beverage strategies and team development frameworks across a diverse portfolio of hotels, restaurants and entertainment venues.",
+      "Partnered with a leading Sydney pub group to establish scalable hospitality systems, beverage strategies and team development frameworks across a diverse portfolio of hotels, restaurants and entertainment venues.",
     pillars: [
       {
         title: "Group Standards",
@@ -236,11 +237,11 @@ export const projects: Project[] = [
       },
     ],
     challenge:
-      "As Sonnel Hospitality Group continued to expand and invest in its growing portfolio, there was an opportunity to create greater consistency across operations, guest experience and beverage performance.\n\nWith a diverse collection of venues operating across different demographics, markets and service styles, maintaining alignment while preserving each venue's individual identity became increasingly important.\n\nThe group required a scalable framework that could improve team capability, operational execution and commercial performance while supporting future growth.",
+      "As the group continued to expand and invest in its growing portfolio, there was an opportunity to create greater consistency across operations, guest experience and beverage performance.\n\nWith a diverse collection of venues operating across different demographics, markets and service styles, maintaining alignment while preserving each venue's individual identity became increasingly important.\n\nThe group required a scalable framework that could improve team capability, operational execution and commercial performance while supporting future growth.",
     approach:
-      "BHC was engaged to work alongside senior leadership to develop a hospitality framework capable of supporting both individual venue success and broader group objectives.\n\nThe project focused on creating practical systems that could be implemented across multiple venues while remaining flexible enough to suit each venue's unique operating environment.\n\nKey initiatives included the development of Sonnel Hospitality Beverage Standards, group-wide front-of-house service standards, beverage menu strategy and optimisation, leadership and management development programs, team training frameworks and educational resources, seasonal beverage planning and activation strategies, commercial performance reviews and profitability analysis, venue-by-venue operational assessments, and the development of scalable implementation systems for future venues.\n\nThe approach prioritised simplicity, consistency and long-term sustainability, ensuring standards could be successfully embedded within daily operations rather than existing as standalone training programs.",
+      "BHC was engaged to work alongside senior leadership to develop a hospitality framework capable of supporting both individual venue success and broader group objectives.\n\nThe project focused on creating practical systems that could be implemented across multiple venues while remaining flexible enough to suit each venue's unique operating environment.\n\nKey initiatives included the development of group-wide beverage standards, front-of-house service standards, beverage menu strategy and optimisation, leadership and management development programs, team training frameworks and educational resources, seasonal beverage planning and activation strategies, commercial performance reviews and profitability analysis, venue-by-venue operational assessments, and the development of scalable implementation systems for future venues.\n\nThe approach prioritised simplicity, consistency and long-term sustainability, ensuring standards could be successfully embedded within daily operations rather than existing as standalone training programs.",
     outcome:
-      "The partnership established stronger foundations across the Sonnel Hospitality portfolio: group-wide hospitality standards implemented across multiple venues, improved consistency in service delivery, enhanced beverage programs aligned with commercial objectives, stronger leadership capability across management teams, structured training pathways supporting employee development, increased operational accountability, improved collaboration between venue teams and group leadership, and scalable systems designed to support future venue acquisitions and developments.\n\nToday, Sonnel Hospitality Group operates with a stronger operational framework, clearer service standards and a scalable platform that supports both venue-level excellence and long-term portfolio growth.",
+      "The partnership established stronger foundations across the group's portfolio: group-wide hospitality standards implemented across multiple venues, improved consistency in service delivery, enhanced beverage programs aligned with commercial objectives, stronger leadership capability across management teams, structured training pathways supporting employee development, increased operational accountability, improved collaboration between venue teams and group leadership, and scalable systems designed to support future venue acquisitions and developments.\n\nToday, the group operates with a stronger operational framework, clearer service standards and a scalable platform that supports both venue-level excellence and long-term portfolio growth.",
   },
 
   // ─────────────────────────────────────────────────────────────────

@@ -7,8 +7,9 @@
  * Nov 2024 partner-brand notes. All logos are white-on-transparent PNGs
  * designed for dark backgrounds (the components apply brightness(0) invert(1)).
  * Blurbs only exist where Brendon supplied copy — case-study clients
- * (The Grounds, Sonnel, Cabravale, SRG) render logo-only because their
- * deeper story lives at /projects/<slug>.
+ * (The Grounds, Cabravale, SRG) render logo-only because their deeper
+ * story lives at /projects/<slug>. Anonymised case studies (Sydney Pub
+ * Group, Western Sydney Hotel) have no logo here by design.
  */
 
 export type ClientLogo = {
@@ -20,7 +21,6 @@ export type ClientLogo = {
 
 export const CLIENTS: ClientLogo[] = [
   { name: "The Grounds of Alexandria", src: "/clients/grounds-of-alexandria.png" },
-  { name: "Sonnel Group", src: "/clients/sonnel-group.png" },
   { name: "Sydney Restaurant Group", src: "/clients/sydney-restaurant-group.png" },
   { name: "Cabravale Club Resort", src: "/clients/cabravale-club-resort.png" },
   {
