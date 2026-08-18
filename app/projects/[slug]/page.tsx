@@ -156,7 +156,13 @@ export default async function ProjectPage({
             <MetaItem label="Year" value={String(project.year)} />
             <MetaItem
               label="Location"
-              value={`${project.suburb}, Sydney`}
+              // Anonymised projects use the generic suburb "Sydney" — avoid
+              // rendering it as "Sydney, Sydney".
+              value={
+                project.suburb === "Sydney"
+                  ? "Sydney"
+                  : `${project.suburb}, Sydney`
+              }
             />
           </div>
         </section>

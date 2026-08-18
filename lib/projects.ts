@@ -155,7 +155,8 @@ export const projects: Project[] = [
     client: "Sydney Pub Group",
     type: "hotel",
     coords: [150.91, -33.952],
-    suburb: "Casula",
+    // Anonymised: generic "Sydney" instead of the identifying suburb.
+    suburb: "Sydney",
     year: 2024,
     duration: "18 months (ongoing)",
     services: [
@@ -206,7 +207,8 @@ export const projects: Project[] = [
     client: "Sydney Pub Group",
     type: "venue-group",
     coords: [151.103, -33.878],
-    suburb: "Burwood",
+    // Anonymised: generic "Sydney" instead of the identifying HQ suburb.
+    suburb: "Sydney",
     year: 2024,
     duration: "18 months (ongoing)",
     services: [
