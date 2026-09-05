@@ -5,6 +5,8 @@ import "./globals.css";
 import { BookCallProvider } from "@/components/calendly/BookCallProvider";
 import { PostHogProvider } from "@/components/analytics/PostHogProvider";
 import { MetaPixel } from "@/components/analytics/MetaPixel";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { siteGraph } from "@/lib/schema";
 
 // Env-gated GA4: only loads when NEXT_PUBLIC_GA_ID is set, so local dev /
 // preview builds stay analytics-free unless explicitly configured.
@@ -18,9 +20,9 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
-  title: "BHC — Brendon Hill Consultancy",
+  title: "BHC — Hospitality Consultancy Sydney | Brendon Hill Consultancy",
   description:
-    "Everything Elevated. No Exceptions. A people-led hospitality consultancy combining strategy, creativity, and experience design.",
+    "Everything Elevated. No Exceptions. BHC is a people-led hospitality consultancy in Sydney helping venues lift profit through strategy, operations, beverage programs and team development — systems used across 100+ venues.",
   metadataBase: new URL("https://brendonhill.co"),
   // Live on brendonhill.co — marketing site is indexable. Funnel pages
   // (/training, checkout, downloads) keep their own per-page noindex.
@@ -64,6 +66,7 @@ export default function RootLayout({
         <PostHogProvider>
           <BookCallProvider>{children}</BookCallProvider>
         </PostHogProvider>
+        <JsonLd data={siteGraph()} />
       </body>
       {GA_ID ? <GoogleAnalytics gaId={GA_ID} /> : null}
       <MetaPixel />

@@ -17,6 +17,8 @@ import {
   TYPE_LABELS,
 } from "@/lib/projects";
 import { getHeroImage, getGalleryImages } from "@/lib/projectImages";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { projectArticleSchema } from "@/lib/schema";
 
 export function generateStaticParams() {
   return projects.map((p) => ({ slug: p.slug }));
@@ -31,10 +33,13 @@ export async function generateMetadata({
   const project = getProjectBySlug(slug);
   if (!project) return { title: "Project not found — BHC" };
   return {
-    title: `${project.name} — BHC`,
+    title: `${project.name} — Hospitality Consulting Case Study — BHC`,
     description: project.summary,
+    alternates: {
+      canonical: `https://brendonhill.co/projects/${project.slug}`,
+    },
     openGraph: {
-      title: `${project.name} — BHC`,
+      title: `${project.name} — Hospitality Consulting Case Study`,
       description: project.summary,
       type: "article",
     },
@@ -348,6 +353,8 @@ export default async function ProjectPage({
         <CTABlock />
       </main>
       <Footer />
+      {/* Case-study Article schema — makes the published numbers citable. */}
+      <JsonLd data={projectArticleSchema(project)} />
     </>
   );
 }

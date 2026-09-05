@@ -6,7 +6,7 @@ import { BhcLogo } from "@/components/brand/BhcLogo";
 const NAV_LINKS = [
   { href: "/#selected-work-heading", label: "Projects", external: false },
   { href: "/#services-heading", label: "Services", external: false },
-  { href: "/#team-heading", label: "About", external: false },
+  { href: "/about", label: "About", external: false },
   {
     href: "mailto:brendon@brendonhill.co",
     label: "Contact",
